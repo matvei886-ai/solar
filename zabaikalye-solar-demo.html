@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Солнечная энергия в Забайкалье</title>
+<meta name="description" content="Интерактивная демонстрация солнечных систем: автомойка с электрозарядкой, объект без сети, торговый центр, зарядная станция на трассе с кофейней и частный дом.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b16; --panel:#0f1626; --panel2:#141d31; --line:#22304d; --text:#e9eef8; --muted:#8d9ab3;
+  --sun:#ffc23d; --sun2:#ff9d2e; --grid:#4aa3ff; --bat:#3ddc97; --gen:#ff6a3d; --load:#e9eef8; --export:#b98cff; --ev:#3df2ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{min-height:100vh;background:radial-gradient(1200px 600px at 20% -10%,#16264a 0%,transparent 60%),radial-gradient(900px 500px at 110% 10%,#2a1a3a 0%,transparent 55%),var(--bg)}
+.wrap{max-width:1360px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+h1{margin:0;font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.02em}
+h1 span{background:linear-gradient(90deg,var(--sun),var(--sun2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;background:var(--panel);padding:5px;border-radius:14px;border:1px solid var(--line)}
+.tab{flex:1 1 150px;border:0;background:transparent;color:var(--muted);font:600 14px Manrope,sans-serif;padding:10px 12px;border-radius:10px;cursor:pointer;transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#1b2742;font-size:12px}
+.tab:hover{color:var(--text)}
+.tab.active{background:linear-gradient(135deg,#243a66,#1a2846);color:#fff;box-shadow:0 0 0 1px #3a5791 inset,0 6px 20px -6px #3b6bd1}
+.tab.active b{background:var(--sun);color:#1a1200}
+.view{display:none}
+.view.active{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:16px;align-items:start;animation:fade .5s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:1050px){.view.active{grid-template-columns:1fr}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:relative}
+.stage svg.scene{display:block;width:100%;height:auto;user-select:none}
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);background:var(--panel2)}
+.clock{font-weight:800;font-size:22px;font-variant-numeric:tabular-nums;min-width:70px}
+.range{flex:1 1 200px;display:flex;align-items:center;gap:8px}
+.range.small{flex:1 1 240px}
+.range label{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.range output{font-weight:800;min-width:24px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--sun)}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 13px Manrope,sans-serif;padding:7px 10px;border-radius:8px;cursor:pointer}
+.seg button.on{background:#25365c;color:#fff}
+.seg.warn button.on{background:#5c2525}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);font:700 13px Manrope,sans-serif;padding:8px 12px;border-radius:10px;cursor:pointer;min-width:44px}
+.btn:hover{border-color:#3a5791}
+aside{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card h3{margin:0 0 10px;font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi{background:var(--panel2);border-radius:12px;padding:10px;border:1px solid transparent;transition:border-color .3s}
+.kpi .l{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}
+.kpi .v small{font-size:12px;font-weight:600;color:var(--muted);margin-left:3px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 8px currentColor;flex:none}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:6px 0;border-bottom:1px dashed #22304d}
+.row:last-child{border-bottom:0}
+.row b{font-variant-numeric:tabular-nums;text-align:right}
+.row.total{font-size:14.5px}
+.row.total b{color:var(--bat);font-size:16px}
+.big{font-size:26px;font-weight:800;color:var(--bat);font-variant-numeric:tabular-nums;white-space:nowrap}
+.info{min-height:96px}
+.info .t{font-weight:800;margin-bottom:4px}
+.info .d{color:#c3cde0;font-size:13.5px;line-height:1.5}
+.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+.sec{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 2px;font-weight:700}
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.badge{position:absolute;top:12px;left:12px;background:#0b1220cc;border:1px solid var(--line);backdrop-filter:blur(6px);padding:8px 12px;border-radius:12px;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center;max-width:46%}
+.status{position:absolute;top:12px;right:12px;background:#0b1220cc;border:1px solid var(--line);backdrop-filter:blur(6px);padding:8px 12px;border-radius:12px;font-size:12.5px;font-weight:600;max-width:50%}
+@media (max-width:700px){.badge{display:none}.status{left:8px;right:8px;max-width:none;top:8px;font-size:11.5px;padding:6px 10px}}
+[data-info]{cursor:pointer}
+[data-info]:hover{filter:brightness(1.25)}
+.sel{filter:drop-shadow(0 0 6px #fff)}
+footer{margin-top:18px;color:var(--muted);font-size:12px;line-height:1.6}
+.flow{fill:none;stroke-linecap:round}
+.flow-base{fill:none;stroke:#ffffff14;stroke-width:5;stroke-linecap:round}
+.fl{font:700 13px Manrope,sans-serif;paint-order:stroke;stroke:#05080f;stroke-width:4px}
+.lbl{font:700 12px Manrope,sans-serif;fill:#e9eef8;paint-order:stroke;stroke:#05080fcc;stroke-width:3px}
+.mono{font-family:Manrope,system-ui,sans-serif}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glow2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="14"/></filter>
+  <linearGradient id="pv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d3e78"/><stop offset="1" stop-color="#0f2348"/></linearGradient>
+  <pattern id="cells" width="14" height="10" patternUnits="userSpaceOnUse"><rect width="14" height="10" fill="url(#pv)"/><path d="M0 0H14M0 0V10" stroke="#5d86c9" stroke-width=".6" opacity=".55"/></pattern>
+  <radialGradient id="sunG"><stop offset="0" stop-color="#fff6cf"/><stop offset=".45" stop-color="#ffd25a"/><stop offset="1" stop-color="#ff9d2e" stop-opacity="0"/></radialGradient>
+  <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3655"/><stop offset="1" stop-color="#1a233b"/></linearGradient>
+  <linearGradient id="batfill" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1fae6f"/><stop offset="1" stop-color="#6dffbf"/></linearGradient>
+  <linearGradient id="lake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b6cb0" id="lake1"/><stop offset="1" stop-color="#173a6b" id="lake2"/></linearGradient>
+</defs></svg>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span>Солнечная энергия</span> в Забайкалье: 5 примеров</h1>
+      <div class="sub">Интерактивная демонстрация · Чита и край · двигайте время, меняйте сезон и погоду, нажимайте на элементы схемы</div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </header>
+  <main id="views"></main>
+  <footer>Демонстрационная модель: выработка и потребление упрощены и рассчитаны для Читы (≈52° с. ш.). Годовая экономика считается из этой же модели по типовым летним и зимним суткам (ясных дней летом 70%, зимой 80%). Цены оборудования, тарифы (бизнес ≈10,5 ₽/кВт·ч, население ≈6,5 ₽, выкуп излишков ≈2 ₽, дизель ≈34 ₽) и окупаемость — оценки на 2026 год, их нужно уточнять коммерческими предложениями. Схемы концептуальные, здания и названия условные.</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const fmt = (v, d = 0) => (Math.abs(v) < 1e-9 ? 0 : v).toLocaleString('ru-RU', { maximumFractionDigits: d, minimumFractionDigits: d });
+const rub = v => Math.abs(v) >= 1e6 ? fmt(v / 1e6, 2) + ' млн ₽' : Math.abs(v) >= 1e4 ? fmt(v / 1e3) + ' тыс. ₽' : fmt(v) + ' ₽';
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, t) => { const A = hex(a), B = hex(b); t = clamp(t, 0, 1); return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join(''); };
+const hhmm = h => { const m = Math.floor(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const piece = (pts, h) => { for (let i = 1; i < pts.length; i++) if (h <= pts[i][0]) { const [a, va] = pts[i - 1], [b, vb] = pts[i]; return lerp(va, vb, (h - a) / (b - a)); } return pts[pts.length - 1][1]; };
+const now = () => performance.now() / 1000;
+
+const T = 10.5, BUY = 2, TH = 6.5, EVP = 18, DIESEL = 34, LPK = 0.3;
+
+/* ---------- sun model for Chita ---------- */
+const SUN = { summer: { rise: 4.8, set: 21.1 }, winter: { rise: 9.4, set: 17.2 } };
+const sunFrac = (h, s) => (h - SUN[s].rise) / (SUN[s].set - SUN[s].rise);
+const pvShape = (h, s) => { const f = sunFrac(h, s); return (f <= 0 || f >= 1) ? 0 : Math.pow(Math.sin(Math.PI * f), 1.25); };
+const PEAK = { canopy: { summer: .64, winter: .28 }, rack: { summer: .6, winter: .52 }, roof: { summer: .62, winter: .4 }, flatroof: { summer: .62, winter: .34 } };
+const pvOut = (kwp, mount, h, st) => kwp * PEAK[mount][st.season] * pvShape(h, st.season) * (st.cloudy ? .3 : 1);
+
+/* ---------- generic energy simulation ---------- */
+function simulate(S, st) {
+  const sys = S.sys(st); const N = 480, dt = 24 / N; const days = sys.bat ? 3 : 1;
+  let soc = .6, gen = false, out = null;
+  for (let day = 0; day < days; day++) {
+    const arr = []; const c = { pv: 0, pvUsed: 0, load: 0, imp: 0, exp: 0, curt: 0, gen: 0, genh: 0, unmet: 0, ev: 0, coffee: 0, heat: 0, heatTh: 0 };
+    for (let i = 0; i <= N; i++) {
+      const h = Math.min(i * dt, 23.999);
+      const p = S.profile(h, st);
+      const pv = p.pv, load = p.load;
+      const gridOn = sys.grid > 0 && !st.outage, gridMax = gridOn ? sys.grid : 0;
+      if (sys.gen) { if (soc < .2) gen = true; if (soc > .7) gen = false; }
+      let g = sys.gen && gen ? sys.gen : 0, bat = 0, imp = 0, exp = 0, curt = 0, unmet = 0;
+      const minSoc = sys.minSoc ?? .15;
+      const chMax = sys.bat ? Math.max(0, Math.min(sys.batP, (.97 - soc) * sys.bat / dt / .95)) : 0;
+      const disMax = sys.bat ? Math.max(0, Math.min(sys.batP, (soc - minSoc) * sys.bat / dt * .95)) : 0;
+      const net = pv + g - load;
+      if (net >= 0) {
+        bat = Math.min(net, chMax); let rest = net - bat;
+        if (g > 0) { const r = Math.min(rest, g); g -= r; rest -= r; }
+        if (rest > 1e-6) { if (gridOn && sys.exportOK) exp = rest; else curt = rest; }
+      } else {
+        let def = -net;
+        if (sys.strategy === 'peak') { imp = Math.min(def, gridMax); def -= imp; const d = Math.min(def, disMax); bat = -d; def -= d; }
+        else { const d = Math.min(def, disMax); bat = -d; def -= d; imp = Math.min(def, gridMax); def -= imp; }
+        unmet = def;
+      }
+      if (sys.strategy === 'peak' && gridOn && sys.bat && bat >= 0 && (soc < .5 || h < 6.5 || h > 22)) {
+        const spare = gridMax - imp, add = Math.max(0, Math.min(spare, chMax - bat)); imp += add; bat += add;
+      }
+      const m = Object.assign({}, p, { pv, load, g, bat, imp, exp, curt, unmet, soc: soc * 100, genOn: g > .05 });
+      arr.push({ h: i * dt, m, c: Object.assign({}, c) });
+      if (sys.bat) soc = clamp(soc + (bat > 0 ? bat * .95 : bat / .95) * dt / sys.bat, 0, 1);
+      c.pv += pv * dt; c.pvUsed += Math.max(pv - exp - curt, 0) * dt; c.load += load * dt; c.imp += imp * dt; c.exp += exp * dt;
+      c.curt += curt * dt; c.gen += g * dt; c.genh += g > .05 ? dt : 0; c.unmet += unmet * dt; c.ev += (p.ev || 0) * dt; c.coffee += (p.coffee || 0) * dt; c.heat = (c.heat || 0) + (p.heat || 0) * dt; c.heatTh = (c.heatTh || 0) + (p.heatTh || 0) * dt;
+    }
+    arr.total = c; out = arr;
+  }
+  return out;
+}
+const WEIGHTS = { summer: { clear: .7, cloudy: .3 }, winter: { clear: .8, cloudy: .2 } };
+function annual(S, st) {
+  const A = {};
+  for (const season of ['summer', 'winter']) for (const w of ['clear', 'cloudy']) {
+    const t = simulate(S, Object.assign({}, st, { season, cloudy: w === 'cloudy', outage: false })).total;
+    for (const k in t) A[k] = (A[k] || 0) + t[k] * 182.5 * WEIGHTS[season][w];
+  }
+  return A;
+}
+
+/* ---------- drawing helpers ---------- */
+const baseSky = key => `<defs><linearGradient id="sky-${key}" x1="0" y1="0" x2="0" y2="1"><stop data-ref="sky1" offset="0" stop-color="#0b1530"/><stop data-ref="sky2" offset="1" stop-color="#1b2b52"/></linearGradient></defs>
+<rect width="1000" height="560" fill="url(#sky-${key})"/><g data-ref="stars"></g>
+<g data-ref="sunwrap"><circle r="70" fill="url(#sunG)" opacity=".9"/><circle r="22" fill="#ffe08a"/></g>
+<circle data-ref="moon" r="16" fill="#dfe7ff" opacity="0"/><g data-ref="clouds" opacity="0"></g>`;
+const F = (name, d, color) => `<path class="flow-base" d="${d}"/><path class="flow" data-ref="f-${name}" d="${d}" stroke="${color}" filter="url(#glow)"/>`;
+const L = (name, color, lx, ly, anchor = 'middle') => `<text class="fl" data-ref="l-${name}" x="${lx}" y="${ly}" fill="${color}" text-anchor="${anchor}"></text>`;
+const panelPath = (x1, x2, y, hgt = 26, inset = 22) => `M${x1} ${y} L${x1 + inset} ${y - hgt} H${x2 - inset} L${x2} ${y}Z`;
+
+function makeStars(g) { for (let i = 0; i < 70; i++) el('circle', { cx: Math.random() * 1000, cy: Math.random() * 300, r: Math.random() * 1.3 + .3, fill: '#fff', opacity: Math.random() * .8 + .2 }, g); }
+function makeClouds(g) {
+  for (let i = 0; i < 6; i++) {
+    const c = el('g', {}, g); c._x = Math.random() * 1100 - 50; c._y = 50 + Math.random() * 150; c._s = .3 + Math.random() * .6; const w = 70 + Math.random() * 80;
+    el('ellipse', { cx: 0, cy: 0, rx: w, ry: 22, fill: '#9aa8c4' }, c); el('ellipse', { cx: -w * .35, cy: -12, rx: w * .45, ry: 22, fill: '#a9b6cf' }, c); el('ellipse', { cx: w * .25, cy: -16, rx: w * .5, ry: 26, fill: '#b8c4da' }, c);
+  }
+}
+function makeSnow(g) { for (let i = 0; i < 90; i++) { const s = el('circle', { r: Math.random() * 1.8 + .6, fill: '#fff', opacity: .85 }, g); s._x = Math.random() * 1000; s._y = Math.random() * 560; } }
+/* one shared vehicle scale for all scenes: ≈22 px per metre, car ≈4,5 m = 100 px */
+function drawCar(parent, color, attrs = {}) {
+  const g = el('g', attrs, parent);
+  el('path', { d: 'M0 -8 q2 -14 14 -16 l13 -14 h40 l14 14 q17 2 19 16 v8 h-100z', fill: color }, g);
+  el('path', { d: 'M30 -35 h37 l11 10 h-50z', fill: '#9fd4ff', opacity: .85 }, g);
+  el('rect', { x: 94, y: -20, width: 6, height: 4, rx: 1, fill: '#ffe9a8' }, g); el('rect', { x: 0, y: -20, width: 4, height: 4, rx: 1, fill: '#ff5a5a' }, g);
+  for (const cx of [22, 78]) { el('circle', { cx, cy: 0, r: 8.5, fill: '#111' }, g); el('circle', { cx, cy: 0, r: 3, fill: '#777' }, g); }
+  return g;
+}
+function drawTruck(parent, color, attrs = {}) {
+  const g = el('g', attrs, parent);
+  el('rect', { x: 0, y: -72, width: 120, height: 62, rx: 2, fill: '#d5d9e2' }, g); el('rect', { x: 0, y: -12, width: 168, height: 4, fill: '#4b5363' }, g);
+  el('path', { d: 'M122 -10 V-50 q0 -6 6 -6 h22 l18 22 v24z', fill: color }, g); el('path', { d: 'M130 -50 h18 l12 16 h-30z', fill: '#9fd4ff', opacity: .85 }, g);
+  el('rect', { x: 162, y: -22, width: 6, height: 5, rx: 1, fill: '#ffe9a8' }, g);
+  for (const cx of [24, 60, 146]) { el('circle', { cx, cy: 0, r: 9.5, fill: '#111' }, g); el('circle', { cx, cy: 0, r: 3.5, fill: '#777' }, g); }
+  return g;
+}
+function makePines(g, n, y0, y1) { for (let i = 0; i < n; i++) { const x = i * (1000 / n) + Math.random() * 20, y = y0 + Math.random() * (y1 - y0), s = .6 + Math.random() * .7; const t = el('g', { transform: `translate(${x} ${y}) scale(${s})` }, g); el('path', { d: 'M0 -60 L16 -20 H8 L22 10 H-22 L-8 -20 H-16Z', fill: '#16362a', class: 'pine' }, t); el('rect', { x: -3, y: 10, width: 6, height: 10, fill: '#3a2a1a' }, t); } }
+
+function paintSky(ctx, h, st) {
+  const f = sunFrac(h, st.season);
+  const alt = (f > 0 && f < 1) ? Math.sin(Math.PI * f) : -Math.min(Math.abs(f), Math.abs(f - 1)) * 3;
+  const day = clamp(alt * 2.2, 0, 1), dusk = clamp(1 - Math.abs(alt) * 4, 0, 1) * (alt > -.25 ? 1 : 0);
+  const sum = st.season === 'summer';
+  let top = mix('#070d22', sum ? '#3d8fe0' : '#7aa6d6', day), bot = mix('#14224a', sum ? '#a9dcff' : '#d9e8f7', day);
+  bot = mix(bot, '#ff8a4c', dusk * .75); top = mix(top, '#3a2a63', dusk * .5);
+  if (st.cloudy) { top = mix(top, '#5b6680', day * .55); bot = mix(bot, '#8e99ad', day * .55); }
+  ctx.r.sky1.setAttribute('stop-color', top); ctx.r.sky2.setAttribute('stop-color', bot);
+  ctx.r.stars.setAttribute('opacity', clamp(1 - day * 3 - dusk, 0, 1) * (st.cloudy ? .25 : 1));
+  const sx = 80 + 840 * clamp(f, -.1, 1.1), sy = 330 - 260 * Math.max(alt, -.3);
+  ctx.r.sunwrap.setAttribute('transform', `translate(${sx} ${sy})`); ctx.r.sunwrap.setAttribute('opacity', clamp(alt * 5 + .5, 0, 1) * (st.cloudy ? .45 : 1));
+  const mf = (h + 12) % 24 / 24; ctx.r.moon.setAttribute('cx', 120 + 760 * mf); ctx.r.moon.setAttribute('cy', 90 + 60 * Math.cos(mf * Math.PI * 2)); ctx.r.moon.setAttribute('opacity', clamp(-alt * 4, 0, .9));
+  ctx.r.clouds.setAttribute('opacity', st.cloudy ? .95 : 0);
+  const winter = !sum;
+  if (ctx.r.ground) ctx.r.ground.setAttribute('fill', winter ? mix('#3a4660', '#e2eaf6', day * .8 + .2) : (ctx.groundType === 'city' ? mix('#161f30', '#3b4a5f', day) : mix('#13261a', '#3d6b3a', day)));
+  if (ctx.r.hill) ctx.r.hill.setAttribute('fill', winter ? mix('#1b2740', '#b4c4da', day) : mix('#111d33', '#2e5440', day));
+  if (ctx.r.hill2) ctx.r.hill2.setAttribute('fill', winter ? mix('#22304a', '#cbd8ea', day) : mix('#14243c', '#3a6648', day));
+  ctx.svg.querySelectorAll('.pine').forEach(p => p.setAttribute('fill', winter ? mix('#0e1f1a', '#2c4a3c', day) : mix('#0c1f18', '#1f4a33', day)));
+  ctx.svg.querySelectorAll('.pvsnow').forEach(p => p.setAttribute('opacity', winter ? .6 : 0));
+  return { day, dusk, dark: day < .12 };
+}
+function ambient(ctx, st, dt) {
+  for (const c of ctx.r.clouds.children) { c._x += dt * 18 * c._s; if (c._x > 1120) c._x = -120; c.setAttribute('transform', `translate(${c._x} ${c._y}) scale(${.8 + c._s * .4})`); }
+  const on = st.season === 'winter' && st.cloudy; ctx.r.snow.style.display = on ? '' : 'none';
+  if (on) for (const s of ctx.r.snow.children) { s._y += dt * 40 * +s.getAttribute('r'); s._x += Math.sin(s._y / 30) * .4; if (s._y > 560) { s._y = -5; s._x = Math.random() * 1000; } s.setAttribute('cx', s._x); s.setAttribute('cy', s._y); }
+}
+function setFlow(ctx, name, kw, maxKw, opts = {}) {
+  const p = ctx.r['f-' + name]; if (!p) return; const on = kw > .05;
+  p.style.strokeWidth = on ? 2.5 + 5 * Math.min(kw / maxKw, 1) : 0; p.style.opacity = on ? 1 : 0;
+  p.setAttribute('stroke-dasharray', '10 14'); if (opts.color) p.setAttribute('stroke', opts.color);
+  p._spd = on ? (30 + 140 * Math.min(kw / maxKw, 1)) * (opts.reverse ? -1 : 1) : 0; p._off = p._off || 0;
+  const l = ctx.r['l-' + name]; if (l) { l.textContent = on && opts.label !== '' ? (opts.label ?? fmt(kw, 1) + ' кВт') : ''; if (opts.color) l.setAttribute('fill', opts.color); }
+}
+function tickFlows(ctx, dt) { for (const k in ctx.r) if (k.startsWith('f-')) { const p = ctx.r[k]; p._off = (p._off || 0) - (p._spd || 0) * dt; p.setAttribute('stroke-dashoffset', p._off); } }
+
+/* ---------- mini chart ---------- */
+function drawChart(svg, x, lines, hNow) {
+  svg.innerHTML = '';
+  const W = 320, H = 130, Lm = 28, R = 6, Tm = 10, B = 18;
+  const maxV = Math.max(1, ...lines.filter(s => !s.right).flatMap(s => s.v));
+  const X = hh => Lm + (W - Lm - R) * hh / 24, Y = v => H - B - (H - B - Tm) * v / maxV, Y2 = v => H - B - (H - B - Tm) * v / 100;
+  for (let k = 0; k <= 4; k++) { const v = maxV * k / 4; el('line', { x1: Lm, x2: W - R, y1: Y(v), y2: Y(v), stroke: '#22304d' }, svg); el('text', { x: Lm - 4, y: Y(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#8d9ab3' }, svg).textContent = fmt(v); }
+  for (const hh of [0, 6, 12, 18, 24]) el('text', { x: X(hh), y: H - 5, 'text-anchor': 'middle', 'font-size': 8, fill: '#8d9ab3' }, svg).textContent = hh + ':00';
+  el('text', { x: Lm, y: Tm - 2, 'font-size': 7.5, fill: '#8d9ab3' }, svg).textContent = 'кВт';
+  for (const s of lines) {
+    const pts = s.v.map((v, i) => `${X(x[i]).toFixed(1)},${(s.right ? Y2(v) : Y(v)).toFixed(1)}`);
+    if (s.area) el('path', { d: `M${X(0)},${Y(0)} L${pts.join(' L')} L${X(24)},${Y(0)}Z`, fill: s.color, opacity: .22 }, svg);
+    el('polyline', { points: pts.join(' '), fill: 'none', stroke: s.color, 'stroke-width': s.w || 1.6, 'stroke-dasharray': s.dash || '' }, svg);
+  }
+  svg._m = el('line', { y1: Tm, y2: H - B, stroke: '#fff', 'stroke-width': 1.2, opacity: .85 }, svg); svg._X = X; moveMarker(svg, hNow);
+}
+function moveMarker(svg, h) { if (svg._m) { const x = svg._X(h); svg._m.setAttribute('x1', x); svg._m.setAttribute('x2', x); } }
+
+/* =================================================================== */
+/* SCENES                                                              */
+/* =================================================================== */
+const SCENES = [];
+
+/* ---------- 1. CAR WASH + EV CHARGER ---------- */
+SCENES.push({
+  key: 'wash', tab: 'Автомойка + зарядка', groundType: 'city',
+  badge: () => 'Автомойка самообслуживания · 4 поста · зарядка 60 кВт · 45 кВт панелей',
+  state: { season: 'summer', cloudy: false },
+  sys: () => ({ bat: 0, grid: 1e9, exportOK: true, strategy: 'grid' }),
+  evS: st => ({ times: st.season === 'summer' ? [8.6, 11.2, 13.4, 15.8, 18.1, 20.3] : [9.8, 13.1, 17.2, 19.6], dur: .78, p: 45 }),
+  profile(h, st) {
+    const pv = pvOut(45, 'canopy', h, st);
+    const mult = st.season === 'summer' ? 1 : .65;
+    const dem = piece([[0, .04], [7, .05], [8.5, .45], [10, .7], [13, .75], [15, .55], [17, .8], [19, .9], [21, .45], [22.5, .12], [24, .04]], h) * mult;
+    const dark = pvShape(h, st.season) < .08;
+    const wash = (st.season === 'summer' ? 2.4 : 8.5) + (dark ? 2.6 : .5) + dem * 4 * 4.6;
+    const E = this.evS(st); let ev = 0, prog = 0; for (const t of E.times) if (h >= t && h < t + E.dur) { ev = E.p; prog = (h - t) / E.dur; }
+    return { pv, load: wash + ev, wash, ev, prog, posts: Math.round(dem * 4), dark };
+  },
+  svg: k => baseSky(k) + `
+    <path data-ref="hill" d="M0 390 Q120 340 240 372 T480 360 T720 352 T1000 370 V440 H0Z"/>
+    <g data-ref="city"></g>
+    <rect data-ref="ground" x="0" y="438" width="1000" height="122"/>
+    <rect x="0" y="438" width="1000" height="5" fill="#2f3d57"/>
+    <g data-info="grid"><rect x="958" y="250" width="6" height="190" fill="#5b6b8c"/><rect x="938" y="258" width="46" height="5" fill="#5b6b8c"/><circle cx="942" cy="256" r="3" fill="#9fb4dd"/><circle cx="980" cy="256" r="3" fill="#9fb4dd"/>
+      <rect x="946" y="330" width="30" height="40" rx="4" fill="#26324d" stroke="#4aa3ff" stroke-width="1.5"/><text x="961" y="355" text-anchor="middle" font-size="10" font-weight="800" fill="#4aa3ff" class="mono">кВт·ч</text></g>
+    ${F('grid', 'M961 372 V488 H570 V438', 'var(--grid)')}
+    ${F('wash', 'M530 412 H522 V454 H60', 'var(--load)')}
+    ${F('ev', 'M612 420 H711 V438', 'var(--ev)')}
+    <g data-info="pv"><rect x="40" y="262" width="480" height="14" rx="3" fill="#cfd8ea"/>
+      <text x="280" y="273" text-anchor="middle" class="mono" font-weight="800" font-size="9.5" fill="#1d3e78" letter-spacing="3">МОЙКА САМООБСЛУЖИВАНИЯ</text>
+      <path d="${panelPath(46, 514, 262)}" fill="url(#cells)" stroke="#9bb7e6" stroke-width="1.2"/><path data-ref="shine1" d="${panelPath(46, 514, 262)}" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/>
+      <path class="pvsnow" d="M52 258 L70 240 H190 L172 258Z M250 258 L268 240 H380 L362 258Z" fill="#eef4ff" opacity="0"/></g>
+    <g fill="#aab6cf"><rect x="46" y="276" width="8" height="162"/><rect x="160" y="276" width="6" height="162"/><rect x="274" y="276" width="6" height="162"/><rect x="388" y="276" width="6" height="162"/><rect x="506" y="276" width="8" height="162"/></g>
+    <g data-ref="baylights"></g><g data-ref="bays" data-info="posts"></g>
+    <g data-info="evcanopy"><rect x="650" y="262" width="270" height="12" rx="3" fill="#cfd8ea"/>
+      <text x="785" y="272" text-anchor="middle" class="mono" font-weight="800" font-size="9" fill="#0e6b78" letter-spacing="2">ЗАРЯДКА ЭЛЕКТРОМОБИЛЕЙ</text>
+      <path d="${panelPath(656, 914, 262)}" fill="url(#cells)" stroke="#9bb7e6" stroke-width="1.2"/><path data-ref="shine2" d="${panelPath(656, 914, 262)}" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/>
+      <path class="pvsnow" d="M664 258 L682 240 H780 L762 258Z" fill="#eef4ff" opacity="0"/>
+      <rect x="656" y="274" width="7" height="164" fill="#aab6cf"/><rect x="906" y="274" width="7" height="164" fill="#aab6cf"/></g>
+    <rect data-ref="evspot" x="740" y="436" width="150" height="4" fill="#3df2ff" opacity=".35"/>
+    <g data-ref="evcar" opacity="0"></g>
+    <path data-ref="evcable" d="M718 404 Q736 430 756 418" stroke="#1b1b1b" stroke-width="4" fill="none" opacity="0"/>
+    <g data-info="charger"><rect x="700" y="386" width="22" height="52" rx="4" fill="#16233d" stroke="#3df2ff" stroke-width="1.5"/><rect data-ref="evscreen" x="704" y="391" width="14" height="16" rx="2" fill="#0b1220"/><text x="711" y="403" text-anchor="middle" font-size="9" font-weight="800" fill="#3df2ff" class="mono">⚡</text><text x="711" y="378" text-anchor="middle" class="lbl" style="font-size:10.5px">DC 60 кВт</text></g>
+    <g data-info="inv"><rect x="530" y="368" width="82" height="70" rx="6" fill="#26324d" stroke="#3a4a72"/><rect x="542" y="378" width="40" height="48" rx="5" fill="#0e1628" stroke="#ffc23d" stroke-width="1.5"/>
+      <circle data-ref="invled" cx="562" cy="392" r="5" fill="#3ddc97" filter="url(#glow)"/><text data-ref="invtxt" x="562" y="414" text-anchor="middle" font-size="7.5" font-weight="800" fill="#ffc23d" class="mono">0 кВт</text>
+      <text x="571" y="452" text-anchor="middle" class="lbl">инвертор</text></g>
+    ${F('sun1', 'M400 250 H564 V368', 'var(--sun)')}${F('sun2', 'M800 250 H590 V368', 'var(--sun)')}
+    ${L('sun1', 'var(--sun)', 470, 238)}${L('wash', '#fff', 300, 474)}${L('ev', 'var(--ev)', 640, 432)}${L('grid', 'var(--grid)', 780, 508)}
+    <g data-ref="snow"></g>`,
+  init(ctx) {
+    const city = ctx.r.city;
+    [[600, 300, 60], [670, 330, 70], [760, 290, 55], [830, 320, 80], [930, 340, 50]].forEach(([x, y, w]) => { el('rect', { x, y, width: w, height: 438 - y, fill: '#1b2540', class: 'cityb' }, city); for (let i = 0; i < 6; i++) el('rect', { x: x + 8 + (i % 3) * (w / 3.4), y: y + 10 + Math.floor(i / 3) * 20, width: 8, height: 8, fill: '#2b3a5e', class: 'cw' }, city); });
+    const bays = ctx.r.bays, bl = ctx.r.baylights;
+    for (let i = 0; i < 4; i++) {
+      const x = 54 + i * 114;
+      el('rect', { x: x - 2, y: 278, width: 108, height: 160, fill: '#7fd3ff', opacity: 0, class: 'baylight', filter: 'url(#glow2)' }, bl);
+      const g = el('g', { class: 'car', opacity: 0 }, bays);
+      drawCar(g, ['#e04f5f', '#e9eef8', '#3a7bd5', '#2b2f3a'][i], { transform: `translate(${x + 3} 429.5)` });
+      const sp = el('g', {}, g); for (let k = 0; k < 12; k++) { const s = el('circle', { r: 1.6, fill: '#bfeaff' }, sp); s._k = k; s._x = x; }
+      el('rect', { x: x + 101, y: 316, width: 10, height: 34, rx: 2, fill: '#20304f', stroke: '#7fd3ff', 'stroke-width': 1 }, bays);
+      el('text', { x: x + 50, y: 318, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: '#7fd3ff', class: 'mono' }, bays).textContent = 'ПОСТ ' + (i + 1);
+    }
+    drawCar(ctx.r.evcar, '#e9eef8', { transform: 'translate(752 429.5)' });
+    el('rect', { x: 782, y: 362, width: 44, height: 18, rx: 5, fill: '#0b1220', stroke: '#3df2ff' }, ctx.r.evcar);
+    ctx.r.evbar = el('rect', { x: 784, y: 364, width: 0, height: 14, rx: 3, fill: '#3df2ff', opacity: .7 }, ctx.r.evcar);
+    ctx.r.evpct = el('text', { x: 804, y: 375, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: '#fff', class: 'mono' }, ctx.r.evcar);
+  },
+  render(ctx, m, st, sky) {
+    ctx.r.shine1.setAttribute('opacity', m.pv / 45 * .55); ctx.r.shine2.setAttribute('opacity', m.pv / 45 * .55);
+    ctx.svg.querySelectorAll('.cw').forEach((w, i) => w.setAttribute('fill', sky.dark && i % 3 !== 1 ? '#ffd98a' : '#2b3a5e'));
+    ctx.svg.querySelectorAll('.cityb').forEach(b => b.setAttribute('fill', st.season === 'winter' ? mix('#1b2540', '#7d8ba6', sky.day) : mix('#141c33', '#3c4b6b', sky.day)));
+    const cars = ctx.r.bays.querySelectorAll('.car'), lights = ctx.r.baylights.children;
+    cars.forEach((g, i) => { const on = i < m.posts; g.setAttribute('opacity', on ? 1 : 0); lights[i].setAttribute('opacity', (on ? .18 : 0) + (m.dark ? .12 : 0)); });
+    const tt = now();
+    ctx.r.bays.querySelectorAll('circle').forEach(s => { if (s._k === undefined) return; const t = (tt / .6 + s._k / 12) % 1; s.setAttribute('cx', s._x + 12 + t * 76); s.setAttribute('cy', 378 - Math.sin(t * Math.PI) * 10 + t * 26); s.setAttribute('opacity', 1 - t); });
+    const evOn = m.ev > 0; ctx.r.evcar.setAttribute('opacity', evOn ? 1 : 0); ctx.r.evcable.setAttribute('opacity', evOn ? 1 : 0);
+    const pct = Math.round(20 + 60 * m.prog); ctx.r.evbar.setAttribute('width', 40 * pct / 100); ctx.r.evpct.textContent = pct + '%';
+    ctx.r.evscreen.setAttribute('fill', evOn ? (Math.sin(tt * 4) > 0 ? '#0e3b44' : '#0b1220') : '#0b1220');
+    ctx.r.evspot.setAttribute('opacity', evOn ? .8 : (sky.dark ? .5 : .25));
+    setFlow(ctx, 'sun1', m.pv * 30 / 45, 30, { label: m.pv > .05 ? '☀ ' + fmt(m.pv, 1) + ' кВт' : '' }); setFlow(ctx, 'sun2', m.pv * 15 / 45, 15, { label: '' });
+    setFlow(ctx, 'wash', m.wash, 30, { label: 'мойка ' + fmt(m.wash, 1) + ' кВт' }); setFlow(ctx, 'ev', m.ev, 50, { label: '⚡ ' + fmt(m.ev) + ' кВт' });
+    if (m.exp > .05) setFlow(ctx, 'grid', m.exp, 40, { reverse: true, color: 'var(--export)', label: '→ в сеть ' + fmt(m.exp, 1) + ' кВт' });
+    else setFlow(ctx, 'grid', m.imp, 60, { color: 'var(--grid)', label: 'из сети ' + fmt(m.imp, 1) + ' кВт' });
+    ctx.r.invtxt.textContent = fmt(m.pv, 1) + ' кВт'; ctx.r.invled.setAttribute('fill', m.pv > .05 ? '#3ddc97' : '#5b6b8c');
+  },
+  status(m) {
+    const share = m.load ? Math.min(m.pv, m.load) / m.load * 100 : 0;
+    if (m.ev > 0 && m.pv > .05) return `⚡ Заряжается электромобиль — солнце покрывает <b style="color:var(--sun)">${fmt(share)}%</b>, остальное из сети`;
+    if (m.ev > 0) return '⚡ Заряжается электромобиль — энергия из сети';
+    if (m.pv < .05) return '🌙 Солнца нет — всё берём из сети';
+    if (m.exp > .05) return '☀ Солнца больше, чем нужно — излишки продаём в сеть';
+    return `☀ Солнце покрывает <b style="color:var(--sun)">${fmt(share)}%</b> потребления мойки`;
+  },
+  kpis: [
+    ['Солнце даёт', 'var(--sun)', m => [m.pv, 'кВт']], ['Мойка берёт', '#fff', m => [m.wash, 'кВт']],
+    ['Зарядка', 'var(--ev)', m => [m.ev, 'кВт', 0]], ['Сеть', 'var(--grid)', m => m.exp > .05 ? ['→' + fmt(m.exp, 1), 'кВт в сеть'] : [m.imp, 'кВт из сети']]],
+  day: (c, st, S) => [['Солнце выработало', fmt(c.pv) + ' кВт·ч'], ['Зарядили машин', S.evS(st).times.filter(t => t < c._h).length + ' · ' + fmt(c.ev) + ' кВт·ч'], ['Купили из сети', fmt(c.imp) + ' кВт·ч'], ['Продали в сеть', fmt(c.exp) + ' кВт·ч'], ['Выручка зарядки', rub(c.ev * EVP)]],
+  big: c => ['Солнце сэкономило', c.pvUsed * T + c.exp * BUY],
+  chart: d => [{ v: d.map(a => a.m.pv), color: '#ffc23d', area: true, w: 1.8 }, { v: d.map(a => a.m.load), color: '#e9eef8' }, { v: d.map(a => a.m.ev), color: '#3df2ff', w: 1.2 }, { v: d.map(a => a.m.imp), color: '#4aa3ff', w: 1.2, dash: '3 2' }],
+  legend: [['солнце', '--sun'], ['всё потребление', '--load'], ['зарядка', '--ev'], ['из сети', '--grid']],
+  econ(A) {
+    const capPV = 2.8e6, capEV = 2.4e6, solar = A.pvUsed * T + A.exp * BUY, evRev = A.ev * EVP, evMargin = A.ev * (EVP - T) - evRev * .11;
+    return { rows: [['<div class="sec">Солнечная станция 45 кВт</div>'], ['Цена под ключ', '≈2,8 млн ₽'], ['Выработка в год', fmt(A.pv / 1000) + ' тыс. кВт·ч'], ['Экономия на свете в год', rub(solar), 'g'], ['Окупаемость панелей', fmt(capPV / solar, 1) + ' года'],
+      ['<div class="sec">Электрозарядка 60 кВт</div>'], ['Станция + подключение', '≈2,4 млн ₽'], ['Продано энергии в год', fmt(A.ev / 1000) + ' тыс. кВт·ч'], ['Выручка (18 ₽/кВт·ч)', rub(evRev)], ['Маржа после электричества, налога, эквайринга', rub(evMargin)],
+      ['total', 'Итого эффект в год', rub(solar + evMargin)], ['Окупаемость всего (5,2 млн ₽)', fmt((capPV + capEV) / (solar + evMargin), 1) + ' года']],
+      hint: 'Зарядка стоит там, куда и так приезжают машины: пока владелец моет авто, электромобиль заряжается. Днём часть энергии для неё бесплатно даёт солнце.' };
+  },
+  info: {
+    pv: m => ['Панели на крыше мойки', '30 кВт — около 75 панелей по 400 Вт на навесе над постами. Сейчас вся станция даёт <b>' + fmt(m.pv, 1) + ' кВт</b>. Зимой на пологом навесе выработка ниже: снег и низкое солнце.'],
+    evcanopy: () => ['Навес над зарядкой', 'Ещё 15 кВт панелей. Навес защищает машину и станцию от снега, а панели днём частично питают зарядку.'],
+    charger: m => ['Быстрая зарядка DC 60 кВт', 'Разъёмы CHAdeMO (Nissan Leaf), GB/T (китайские машины) и CCS2. Средняя зарядка — 35 кВт·ч за 40–50 минут, ровно пока хозяин моет машину. Цена 18 ₽ за кВт·ч, одна зарядка ≈630 ₽. ' + (m.ev ? 'Сейчас заряжается машина.' : 'Сейчас свободна.')],
+    inv: () => ['Сетевой инвертор', 'Превращает ток панелей в 380 В и подмешивает к сети. Сначала тратится солнце, недостающее добирается из сети автоматически. Аккумуляторов нет — в городе они не нужны.'],
+    posts: m => ['Посты мойки', '4 поста по ≈4–5 кВт: насосы высокого давления, подогрев воды, осмос. Зимой добавляется подогрев полов и труб. Сейчас занято: <b>' + m.posts + '</b>.'],
+    grid: () => ['Сеть и счётчик', 'Двунаправленный счётчик считает покупку и продажу. Излишки выкупают по ≈2 ₽, покупка — ≈10,5 ₽. Поэтому выгоднее тратить солнце самим.']
+  }
+});
+
+/* ---------- 2. OFF-GRID ---------- */
+const MODES = {
+  base: { name: 'База отдыха на Арахлее · без сети', kwp: 25, bat: 60, gen: 15, scale: 1, capex: 4e6, sys: '25 кВт панелей · 60 кВт·ч · генератор 15 кВт' },
+  farm: { name: 'Чабанская стоянка · без сети', kwp: 6, bat: 20, gen: 5, scale: .24, capex: 1.5e6, sys: '6 кВт панелей · 20 кВт·ч · генератор 5 кВт' }
+};
+SCENES.push({
+  key: 'off', tab: 'Без сети: база / стоянка', groundType: 'nature',
+  badge: st => MODES[st.mode].name,
+  state: { season: 'summer', cloudy: false, mode: 'base' },
+  sys: st => { const M = MODES[st.mode]; return { bat: M.bat, batP: M.kwp, grid: 0, gen: M.gen, strategy: 'self', minSoc: .15 }; },
+  profile(h, st) {
+    const M = MODES[st.mode];
+    const v = piece([[0, 1.2], [6, 1.2], [7.5, 3.6], [10, 2.6], [17, 2.6], [18.5, 5.6], [22.5, 5.2], [23.5, 1.4], [24, 1.2]], h);
+    const load = v * M.scale * (st.season === 'winter' ? .85 : 1) + (st.season === 'winter' ? .4 * Math.max(M.scale, .5) : 0);
+    return { pv: pvOut(M.kwp, 'rack', h, st), load };
+  },
+  controls: `<div class="seg" data-ctl="mode"><button data-v="base" class="on">База</button><button data-v="farm">Стоянка</button></div>`,
+  onCtl(ctx, st, k, v) { if (k === 'mode') { const b = v === 'base'; ctx.r.base.style.display = b ? '' : 'none'; ctx.r.farm.style.display = b ? 'none' : ''; ctx.r.lakeg.style.display = b ? '' : 'none'; ctx.r.steppe.style.display = b ? 'none' : ''; } },
+  svg: k => baseSky(k) + `
+    <path data-ref="hill" d="M0 330 Q150 250 300 300 T600 280 T1000 300 V420 H0Z"/><path data-ref="hill2" d="M0 370 Q200 320 420 350 T1000 345 V430 H0Z"/>
+    <g data-ref="pines"></g><rect data-ref="ground" x="0" y="415" width="1000" height="145"/>
+    <g data-ref="lakeg"><path d="M520 470 Q600 445 760 450 T1000 445 V560 H470 Q480 500 520 470Z" fill="url(#lake)"/><g data-ref="shimmer" stroke="#cfe6ff" stroke-linecap="round"></g>
+      <path data-ref="ice" d="M520 470 Q600 445 760 450 T1000 445 V560 H470 Q480 500 520 470Z" fill="#dfeaf7" opacity="0"/><text x="800" y="530" text-anchor="middle" class="lbl" style="font-size:13px;fill:#cfe6ff">оз. Арахлей</text></g>
+    <g data-ref="steppe" style="display:none"><path d="M470 445 Q700 430 1000 440 V560 H470Z" fill="#7a6b3a" opacity=".55"/></g>
+    <g data-info="pv"><g data-ref="pvrows"></g><path data-ref="shine" d="" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/></g>
+    <g data-info="bat"><rect x="300" y="360" width="120" height="70" rx="4" fill="#d9dee8"/><path d="M312 362V428M324 362V428M336 362V428M348 362V428M360 362V428M372 362V428M384 362V428M396 362V428M408 362V428" stroke="#b5bdcc" stroke-width="2"/>
+      <rect x="318" y="372" width="26" height="48" rx="3" fill="#0e1628" stroke="#3ddc97" stroke-width="1.5"/><rect x="321" y="375" width="20" height="42" fill="#0b1f19"/><rect data-ref="batlvl" x="321" y="417" width="20" height="0" fill="url(#batfill)" filter="url(#glow)"/>
+      <text data-ref="batpct" x="331" y="368" text-anchor="middle" font-size="9" font-weight="800" fill="#1f2a3d" class="mono">60%</text><text x="360" y="447" text-anchor="middle" class="lbl">накопитель</text></g>
+    <g data-info="inv"><rect x="360" y="374" width="44" height="38" rx="4" fill="#0e1628" stroke="#ffc23d" stroke-width="1.5"/><circle cx="372" cy="386" r="4" fill="#3ddc97" filter="url(#glow)"/><text data-ref="invtxt" x="382" y="404" text-anchor="middle" font-size="7.5" font-weight="800" fill="#ffc23d" class="mono">0 кВт</text></g>
+    <g data-info="gen" data-ref="gen"><rect x="440" y="385" width="74" height="45" rx="4" fill="#4b3a2a" stroke="#6e5640"/><path d="M436 387 L477 366 L518 387Z" fill="#5d4732"/><rect x="452" y="398" width="40" height="22" rx="3" fill="#2b1f15"/>
+      <circle data-ref="genled" cx="462" cy="409" r="5" fill="#ff6a3d" opacity=".25"/><rect x="500" y="352" width="6" height="22" fill="#55606f"/><text x="477" y="447" text-anchor="middle" class="lbl">генератор</text><g data-ref="smoke"></g></g>
+    <g data-ref="base"><g data-info="cabins" data-ref="cabins"></g>
+      <g data-info="banya"><rect x="880" y="395" width="56" height="40" fill="#7a5233"/><path d="M874 397 L908 374 L942 397Z" fill="#5a3b24"/><rect x="918" y="370" width="7" height="16" fill="#4a3a30"/><rect data-ref="banyawin" x="890" y="405" width="14" height="12" fill="#2a1a10"/><text x="908" y="452" text-anchor="middle" class="lbl">баня</text><g data-ref="bsmoke"></g></g></g>
+    <g data-ref="farm" style="display:none">
+      <g data-info="house"><rect x="590" y="372" width="100" height="62" fill="#8a6a4a"/><path d="M580 375 L640 340 L700 375Z" fill="#5c4a3a"/><rect x="605" y="390" width="20" height="18" fill="#2a1a10" class="win"/><rect x="655" y="390" width="20" height="18" fill="#2a1a10" class="win"/><text x="640" y="452" text-anchor="middle" class="lbl">дом чабана</text></g>
+      <g data-info="barn"><rect x="730" y="392" width="200" height="42" fill="#6d5b44"/><path d="M724 394 L830 368 L936 394Z" fill="#54452f"/><rect x="760" y="403" width="12" height="8" fill="#2a1a10" class="win"/><rect x="820" y="403" width="12" height="8" fill="#2a1a10" class="win"/><rect x="880" y="403" width="12" height="8" fill="#2a1a10" class="win"/><text x="830" y="452" text-anchor="middle" class="lbl">кошара · насос · свет</text></g>
+      <g data-ref="sheep"></g></g>
+    ${F('sun', 'M270 395 H300', 'var(--sun)')}${F('gen', 'M440 412 H404', 'var(--gen)')}${F('load', 'M404 384 Q430 330 520 330 H870', 'var(--load)')}${F('bat', 'M340 352 V330', 'var(--bat)')}
+    ${L('sun', 'var(--sun)', 160, 352)}${L('gen', 'var(--gen)', 477, 476)}${L('load', '#fff', 690, 320)}${L('bat', 'var(--bat)', 340, 322)}
+    <g data-ref="snow"></g>`,
+  init(ctx) {
+    makePines(ctx.r.pines, 26, 340, 400);
+    const rows = ctx.r.pvrows; let shine = '';
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+      const x = 40 + c * 78, y = 360 + r * 34; const d = `M${x} ${y + 22} L${x + 10} ${y} H${x + 74} L${x + 66} ${y + 22}Z`;
+      el('rect', { x: x + 6, y: y + 18, width: 3, height: 24, fill: '#7d8aa3' }, rows); el('rect', { x: x + 60, y: y + 10, width: 3, height: 32, fill: '#7d8aa3' }, rows);
+      el('path', { d, fill: 'url(#cells)', stroke: '#9bb7e6', 'stroke-width': 1 }, rows);
+      el('path', { d: `M${x + 6} ${y + 12} L${x + 12} ${y + 2} H${x + 70} L${x + 64} ${y + 12}Z`, fill: '#eef4ff', opacity: 0, class: 'pvsnow' }, rows); shine += d + ' ';
+    }
+    ctx.r.shine.setAttribute('d', shine); el('text', { x: 155, y: 452, 'text-anchor': 'middle', class: 'lbl' }, rows).textContent = 'панели на стойках';
+    [[560, 372], [680, 366], [790, 374]].forEach(([x, y]) => {
+      const cab = ctx.r.cabins; el('rect', { x, y, width: 80, height: 58, fill: '#8a5a36' }, cab);
+      for (let k = 0; k < 5; k++) el('line', { x1: x, x2: x + 80, y1: y + 10 + k * 10, y2: y + 10 + k * 10, stroke: '#6e4528', 'stroke-width': 1.2 }, cab);
+      el('path', { d: `M${x - 8} ${y + 2} L${x + 40} ${y - 30} L${x + 88} ${y + 2}Z`, fill: '#4a3226' }, cab);
+      el('rect', { x: x + 12, y: y + 18, width: 18, height: 16, fill: '#2a1a10', class: 'win' }, cab); el('rect', { x: x + 50, y: y + 18, width: 18, height: 16, fill: '#2a1a10', class: 'win' }, cab);
+      el('rect', { x: x + 34, y: y + 34, width: 12, height: 24, fill: '#3a2414' }, cab);
+    });
+    el('text', { x: 720, y: 452, 'text-anchor': 'middle', class: 'lbl' }, ctx.r.cabins).textContent = 'гостевые домики';
+    for (let i = 0; i < 14; i++) { const x = 720 + Math.random() * 240, y = 470 + Math.random() * 70; const g = el('g', {}, ctx.r.sheep); g._x = x; g._y = y; g._p = Math.random() * 6; el('ellipse', { cx: 0, cy: 0, rx: 9, ry: 6, fill: '#efe9dc' }, g); el('circle', { cx: 9, cy: -2, r: 3.2, fill: '#3a3530' }, g); }
+    for (let i = 0; i < 8; i++) { const c = el('circle', { fill: '#8a8f99' }, ctx.r.smoke); c._k = i; }
+    for (let i = 0; i < 6; i++) { const c = el('circle', { fill: '#9aa0aa' }, ctx.r.bsmoke); c._k = i; }
+    for (let i = 0; i < 16; i++) { const x = 540 + Math.random() * 440, y = 470 + Math.random() * 80; const l = el('line', { x1: x, x2: x + 14 + Math.random() * 20, y1: y, y2: y, 'stroke-width': 1.5 }, ctx.r.shimmer); l._p = Math.random() * 6; }
+  },
+  render(ctx, m, st, sky, h) {
+    const M = MODES[st.mode], winter = st.season === 'winter', tt = now();
+    ctx.r.ice.setAttribute('opacity', winter ? .85 : 0);
+    document.getElementById('lake1').setAttribute('stop-color', mix('#10244a', '#2b6cb0', sky.day)); document.getElementById('lake2').setAttribute('stop-color', mix('#0a1830', '#173a6b', sky.day));
+    for (const l of ctx.r.shimmer.children) l.setAttribute('opacity', winter ? 0 : (.25 + .6 * Math.abs(Math.sin(tt * 1.4 + l._p))) * (sky.dark ? .4 : 1));
+    ctx.r.shine.setAttribute('opacity', m.pv / M.kwp * .6);
+    const lvl = 42 * m.soc / 100; ctx.r.batlvl.setAttribute('y', 417 - lvl); ctx.r.batlvl.setAttribute('height', lvl); ctx.r.batlvl.setAttribute('fill', m.soc < 25 ? '#ff6a3d' : 'url(#batfill)'); ctx.r.batpct.textContent = fmt(m.soc) + '%';
+    const lightsOn = sky.day < .25 && (h > 15 || h < 1.5 || (h > 6 && h < 10));
+    ctx.svg.querySelectorAll('.win').forEach((w, i) => { const on = lightsOn && (i % 5 !== 2 || h < 23); w.setAttribute('fill', on ? '#ffcf6b' : '#2a1a10'); w.setAttribute('filter', on ? 'url(#glow)' : ''); });
+    ctx.r.banyawin.setAttribute('fill', lightsOn && h > 17 && h < 23 ? '#ffb04a' : '#2a1a10');
+    const g = m.genOn; ctx.r.genled.setAttribute('opacity', g ? 1 : .2); ctx.r.genled.setAttribute('filter', g ? 'url(#glow)' : ''); ctx.r.gen.setAttribute('transform', g ? `translate(${Math.sin(tt * 40) * .8} 0)` : '');
+    for (const s of ctx.r.smoke.children) { const t = (tt * .5 + s._k / 8) % 1; s.setAttribute('cy', 350 - t * 60); s.setAttribute('cx', 503 + t * 25); s.setAttribute('r', 4 + t * 10); s.setAttribute('opacity', g ? (1 - t) * .6 : 0); }
+    const bOn = st.mode === 'base' && h > 16 && h < 22.5; for (const s of ctx.r.bsmoke.children) { const t = (tt * .35 + s._k / 6) % 1; s.setAttribute('cy', 368 - t * 50); s.setAttribute('cx', 921 + t * 18); s.setAttribute('r', 3 + t * 8); s.setAttribute('opacity', bOn ? (1 - t) * .5 : 0); }
+    for (const s of ctx.r.sheep.children) s.setAttribute('transform', `translate(${s._x + Math.sin(tt * .3 + s._p) * 6} ${s._y})`);
+    setFlow(ctx, 'sun', m.pv, M.kwp, { label: m.pv > .05 ? '☀ ' + fmt(m.pv, 1) + ' кВт' : '' }); setFlow(ctx, 'load', m.load, M.kwp * .3, { label: 'потребление ' + fmt(m.load, 1) + ' кВт' });
+    setFlow(ctx, 'gen', m.g, M.gen, { label: '⚙ ' + fmt(m.g, 1) + ' кВт' }); setFlow(ctx, 'bat', Math.abs(m.bat), M.kwp * .6, { reverse: m.bat < 0, label: (m.bat > 0 ? '▲ заряд ' : '▼ разряд ') + fmt(Math.abs(m.bat), 1) + ' кВт' });
+    ctx.r.invtxt.textContent = fmt(m.load, 1) + ' кВт';
+  },
+  status(m) {
+    if (m.genOn) return '⚙ Батарея разряжена — генератор включился автоматически';
+    if (m.curt > .05) return '🔋 Батарея полная — лишнее солнце не нужно';
+    if (m.bat > .05) return '☀ Солнце питает объект и заряжает батарею';
+    if (m.pv > .05) return '☀ Солнце + батарея питают объект';
+    return '🌙 Ночь: объект работает от батареи, генератор молчит';
+  },
+  kpis: [['Солнце', 'var(--sun)', m => [m.pv, 'кВт']], ['Потребление', '#fff', m => [m.load, 'кВт']], ['Батарея', 'var(--bat)', m => [m.soc, '%', 0], m => m.soc < 25], ['Генератор', 'var(--gen)', m => m.genOn ? [m.g, 'кВт'] : ['выкл', ''], m => m.genOn]],
+  day: c => [['Потребление', fmt(c.load) + ' кВт·ч'], ['Доля солнца', '<span style="color:var(--sun)">' + fmt(clamp(c.load ? c.pvUsed / c.load * 100 : 0, 0, 100)) + '%</span>'], ['Генератор работал', fmt(c.genh, 1) + ' ч'], ['Сэкономлено дизеля', fmt(Math.min(c.pvUsed, c.load) * LPK) + ' л']],
+  big: c => ['Экономия на дизеле', Math.min(c.pvUsed, c.load) * DIESEL],
+  chart: d => [{ v: d.map(a => a.m.pv), color: '#ffc23d', area: true, w: 1.8 }, { v: d.map(a => a.m.load), color: '#e9eef8' }, { v: d.map(a => a.m.g), color: '#ff6a3d', w: 1.4 }, { v: d.map(a => a.m.soc), color: '#3ddc97', w: 1.4, dash: '4 2', right: true }],
+  legend: [['солнце', '--sun'], ['потребление', '--load'], ['генератор', '--gen'], ['заряд батареи, %', '--bat']],
+  econ(A, st) {
+    const M = MODES[st.mode], saved = Math.min(A.pvUsed, A.load) * DIESEL;
+    return { rows: [['Система', M.sys], ['Цена под ключ', rub(M.capex)], ['Доля солнца за год', fmt(A.pvUsed / A.load * 100) + '%'], ['Генератор работает в год', fmt(A.genh) + ' ч вместо ' + fmt(8760)], ['Сэкономлено дизеля в год', fmt(Math.min(A.pvUsed, A.load) * LPK / 1000, 1) + ' т'], ['total', 'Экономия в год', rub(saved)], ['Окупаемость', fmt(M.capex / saved, 1) + ' года']],
+      hint: 'Свет от дизеля ≈34 ₽/кВт·ч с топливом и ремонтом. Протянуть 1–2 км сети часто стоит 1,5–3 млн ₽ и дольше года — тогда автономная система выгоднее сразу.' };
+  },
+  info: {
+    pv: (m, st) => ['Панели на стойках', `${MODES[st.mode].kwp} кВт под углом 45–60°. Снег сползает, а зимнее солнце в Забайкалье яркое. Сейчас: <b>${fmt(m.pv, 1)} кВт</b>.`],
+    bat: (m, st) => ['Накопитель LFP', `${MODES[st.mode].bat} кВт·ч в утеплённом контейнере с подогревом. Днём копит солнце, ночью питает объект. Заряд: <b>${fmt(m.soc)}%</b>.`],
+    inv: () => ['Гибридный инвертор', 'Солнце — сразу в дома, излишки — в батарею. Ниже 20% сам запускает генератор и глушит после подзарядки до 70%.'],
+    gen: (m, st) => ['Генератор — резерв', `${MODES[st.mode].gen} кВт с автозапуском. Без солнца работал бы круглосуточно. Сейчас: <b>${m.genOn ? 'работает' : 'выключен'}</b>.`],
+    cabins: () => ['Гостевые домики', 'Свет, розетки, холодильники, насос скважины, бойлеры. Пик — вечером, поэтому нужна батарея.'],
+    banya: () => ['Баня', 'Топится дровами; свет, насос и вентиляция — от солнечной станции.'],
+    house: () => ['Дом чабана', 'Свет, холодильник, телевизор, связь — всё от солнца.'],
+    barn: () => ['Кошара', 'Насос для водопоя, освещение, электропастух.']
+  }
+});
+
+/* ---------- 3. SHOPPING MALL ---------- */
+SCENES.push({
+  key: 'mall', tab: 'Торговый центр', groundType: 'city',
+  badge: () => 'Торговый центр · 200 кВт панелей на крыше',
+  state: { season: 'summer', cloudy: false },
+  sys: () => ({ bat: 0, grid: 1e9, exportOK: true, strategy: 'grid' }),
+  profile(h, st) {
+    const sum = st.season === 'summer', open = piece([[0, 0], [7.5, 0], [10, 1], [22, 1], [23, 0], [24, 0]], h);
+    const night = sum ? 70 : 110, day = sum ? 230 : 215, ac = sum ? 70 * clamp(Math.sin(Math.PI * (h - 11) / 9), 0, 1) : 0;
+    const load = night + (day - night) * open + ac * open;
+    return { pv: pvOut(200, 'flatroof', h, st), load, open };
+  },
+  svg: k => baseSky(k) + `
+    <path data-ref="hill" d="M0 390 Q120 340 240 372 T480 360 T720 352 T1000 370 V440 H0Z"/>
+    <rect data-ref="ground" x="0" y="438" width="1000" height="122"/><rect x="0" y="438" width="1000" height="5" fill="#2f3d57"/>
+    <g data-ref="parking" data-info="parking"></g>
+    <g data-info="pv"><g data-ref="roofpv"></g><path data-ref="shine" d="" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/></g>
+    <g data-info="mall"><rect x="300" y="180" width="660" height="258" rx="6" fill="url(#bld)"/><rect x="296" y="172" width="668" height="12" rx="3" fill="#33446b"/>
+      <g data-ref="mwin"></g>
+      <rect data-ref="glass" x="560" y="330" width="150" height="108" fill="#24345a" stroke="#4d6aa8"/><path d="M635 330 V438 M560 384 H710" stroke="#4d6aa8"/>
+      <rect data-ref="sign" x="575" y="196" width="120" height="34" rx="8" fill="#0d1426" stroke="#ff4fa3" stroke-width="2"/><text data-ref="signtxt" x="635" y="219" text-anchor="middle" class="mono" font-weight="800" font-size="16" fill="#ff8cc6">ТЦ</text></g>
+    <g data-info="tp"><rect x="110" y="378" width="80" height="60" rx="4" fill="#3a4766" stroke="#5b6b8c"/><text x="150" y="405" text-anchor="middle" font-size="13" font-weight="800" fill="#ffcf4a" class="mono">ТП</text><text x="150" y="425" text-anchor="middle" font-size="12" fill="#ffcf4a">⚡</text>
+      <rect x="30" y="250" width="6" height="190" fill="#5b6b8c"/><rect x="12" y="258" width="42" height="5" fill="#5b6b8c"/></g>
+    <g data-info="inv"><rect x="236" y="356" width="56" height="78" rx="5" fill="#26324d" stroke="#3a4a72"/><rect x="244" y="364" width="18" height="30" rx="3" fill="#0e1628" stroke="#ffc23d"/><rect x="266" y="364" width="18" height="30" rx="3" fill="#0e1628" stroke="#ffc23d"/>
+      <rect x="244" y="398" width="18" height="30" rx="3" fill="#0e1628" stroke="#ffc23d"/><rect x="266" y="398" width="18" height="30" rx="3" fill="#0e1628" stroke="#ffc23d"/><text x="264" y="450" text-anchor="middle" class="lbl">инверторы</text></g>
+    ${F('sun', 'M620 150 H264 V356', 'var(--sun)')}${F('grid', 'M33 300 V458 H150 V438 M190 410 H236', 'var(--grid)')}${F('load', 'M292 400 H560', 'var(--load)')}
+    ${L('sun', 'var(--sun)', 440, 140)}${L('grid', 'var(--grid)', 120, 480)}${L('load', '#fff', 426, 390)}
+    <g data-ref="snow"></g>`,
+  init(ctx) {
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 14; c++) { if (r >= 2 && c >= 5 && c <= 8) continue; el('rect', { x: 318 + c * 45, y: 244 + r * 24, width: 30, height: 14, rx: 2, fill: '#2b3a5e', class: 'mw' }, ctx.r.mwin); }
+    let shine = '';
+    for (let row = 0; row < 2; row++) for (let i = 0; i < 15; i++) { const x = 306 + i * 43, y = 170 - row * 16; const d = `M${x} ${y} L${x + 6} ${y - 12} H${x + 40} L${x + 36} ${y}Z`; el('path', { d, fill: 'url(#cells)', stroke: '#9bb7e6', 'stroke-width': .7 }, ctx.r.roofpv); el('path', { d: `M${x + 3} ${y - 3} L${x + 6} ${y - 10} H${x + 30} L${x + 27} ${y - 3}Z`, fill: '#eef4ff', opacity: 0, class: 'pvsnow' }, ctx.r.roofpv); shine += d + ' '; }
+    ctx.r.shine.setAttribute('d', shine);
+    const p = ctx.r.parking; for (let i = 0; i < 14; i++) el('rect', { x: 330 + i * 44, y: 470, width: 2, height: 40, fill: '#5b6b8c' }, p);
+    const cols = ['#e04f5f', '#e9eef8', '#3a7bd5', '#2b2f3a', '#f2b33d', '#6b7280', '#3ddc97'];
+    for (let i = 0; i < 13; i++) { const g = el('g', { class: 'pcar', opacity: 0 }, p); const x = 338 + i * 44; el('rect', { x, y: 478, width: 30, height: 26, rx: 6, fill: cols[i % 7] }, g); el('rect', { x: x + 5, y: 484, width: 20, height: 10, rx: 3, fill: '#9fd4ff', opacity: .7 }, g); }
+    el('text', { x: 640, y: 532, 'text-anchor': 'middle', class: 'lbl' }, p).textContent = 'парковка';
+  },
+  render(ctx, m, st, sky, h) {
+    ctx.r.shine.setAttribute('opacity', m.pv / 200 * .6);
+    const open = m.open > .2;
+    ctx.svg.querySelectorAll('.mw').forEach((w, i) => w.setAttribute('fill', sky.dark ? (open || i % 4 === 0 ? '#ffd98a' : '#2b3a5e') : (open ? mix('#2b3a5e', '#9cc4f0', .5) : '#2b3a5e')));
+    ctx.r.glass.setAttribute('fill', open ? (sky.dark ? '#ffe2a8' : '#6c8fcf') : '#24345a'); ctx.r.glass.setAttribute('filter', open && sky.dark ? 'url(#glow)' : '');
+    ctx.r.sign.setAttribute('filter', sky.dark ? 'url(#glow)' : ''); ctx.r.signtxt.setAttribute('filter', sky.dark ? 'url(#glow)' : '');
+    const occ = Math.round(13 * (m.open * (.35 + .55 * clamp(Math.sin(Math.PI * (h - 10) / 12), 0, 1)) + .05));
+    ctx.svg.querySelectorAll('.pcar').forEach((c, i) => c.setAttribute('opacity', ((i * 7) % 13) < occ ? 1 : 0));
+    setFlow(ctx, 'sun', m.pv, 200, { label: m.pv > .05 ? '☀ ' + fmt(m.pv) + ' кВт' : '' }); setFlow(ctx, 'load', m.load, 300, { label: 'ТЦ ' + fmt(m.load) + ' кВт' });
+    if (m.exp > .05) setFlow(ctx, 'grid', m.exp, 200, { reverse: true, color: 'var(--export)', label: '→ в сеть ' + fmt(m.exp) + ' кВт' }); else setFlow(ctx, 'grid', m.imp, 300, { color: 'var(--grid)', label: 'из сети ' + fmt(m.imp) + ' кВт' });
+  },
+  status(m) { const s = m.load ? m.pv / m.load * 100 : 0; if (m.pv < .5) return '🌙 Солнца нет — ТЦ работает от сети'; return `☀ Крыша покрывает <b style="color:var(--sun)">${fmt(Math.min(s, 100))}%</b> потребления ТЦ — вся выработка идёт на свои нужды`; },
+  kpis: [['Солнце', 'var(--sun)', m => [m.pv, 'кВт', 0]], ['ТЦ потребляет', '#fff', m => [m.load, 'кВт', 0]], ['Из сети', 'var(--grid)', m => [m.imp, 'кВт', 0]], ['Доля солнца', 'var(--sun)', m => [m.load ? Math.min(m.pv / m.load * 100, 100) : 0, '%', 0]]],
+  day: c => [['Солнце выработало', fmt(c.pv) + ' кВт·ч'], ['Потребление ТЦ', fmt(c.load) + ' кВт·ч'], ['Доля солнца с начала суток', fmt(c.load ? c.pvUsed / c.load * 100 : 0) + '%'], ['Купили из сети', fmt(c.imp) + ' кВт·ч']],
+  big: c => ['Сэкономлено', c.pvUsed * T + c.exp * BUY],
+  chart: d => [{ v: d.map(a => a.m.pv), color: '#ffc23d', area: true, w: 1.8 }, { v: d.map(a => a.m.load), color: '#e9eef8' }, { v: d.map(a => a.m.imp), color: '#4aa3ff', w: 1.2, dash: '3 2' }],
+  legend: [['солнце', '--sun'], ['потребление ТЦ', '--load'], ['из сети', '--grid']],
+  econ(A) {
+    const cap = 10e6, s = A.pvUsed * T + A.exp * BUY;
+    return { rows: [['Система', '200 кВт · ≈500 панелей на крыше'], ['Цена под ключ', '≈10 млн ₽'], ['Выработка в год', fmt(A.pv / 1000) + ' тыс. кВт·ч'], ['Доля солнца в потреблении', fmt(A.pvUsed / A.load * 100) + '%'], ['total', 'Экономия в год', rub(s)], ['Окупаемость', fmt(cap / s, 1) + ' года'], ['Экономия за 25 лет службы', '≈' + fmt(s * 25 / 1e6) + ' млн ₽']],
+      hint: 'ТЦ — идеальный клиент: большая плоская крыша, а днём, когда светит солнце, работают свет, кондиционеры и эскалаторы. Выработка не превышает потребление, всё тратится на месте по цене ≈10,5 ₽.' };
+  },
+  info: {
+    pv: m => ['200 кВт на плоской крыше', 'Около 500 панелей на наклонных рамах, без сверления кровли — рамы прижимаются балластом. Сейчас: <b>' + fmt(m.pv) + ' кВт</b>.'],
+    inv: () => ['Сетевые инверторы', '4 инвертора по 50 кВт. Подмешивают солнце к сети здания — сначала тратится солнце, остальное автоматически из сети.'],
+    mall: m => ['Торговый центр', 'Ночью ≈70–110 кВт (холодильники, охрана, вентиляция, зимой отопление), днём — до 300 кВт. Сейчас: <b>' + fmt(m.load) + ' кВт</b>.'],
+    tp: () => ['Трансформаторная подстанция', 'Точка подключения к городской сети. Солнечная станция мощность подключения не меняет: вечером и зимой ТЦ берёт всё из сети.'],
+    parking: () => ['Парковка', 'Над парковкой можно поставить навесы с панелями и зарядки для электромобилей — ещё 100–200 кВт и дополнительная выручка.']
+  }
+});
+
+/* ---------- 4. HIGHWAY STATION + COFFEE ---------- */
+SCENES.push({
+  key: 'road', tab: 'Трасса: зарядка + кофейня', groundType: 'nature',
+  badge: () => 'Р-297 «Амур» · зарядка 120 кВт + кофейня · 60 кВт панелей · накопитель 200 кВт·ч',
+  state: { season: 'summer', cloudy: false, sessions: 8 },
+  sys: () => ({ bat: 200, batP: 150, grid: 50, exportOK: true, strategy: 'peak', minSoc: .1 }),
+  evS(st) { const n = Math.max(1, Math.round(st.sessions * (st.season === 'summer' ? 1 : .5))); const t = []; for (let i = 0; i < n; i++) t.push(7.5 + (i + .5) * 14.5 / n + (((i * 37) % 7) - 3) * .08); return { times: t, dur: .5, n }; },
+  profile(h, st) {
+    const E = this.evS(st); let ev = 0, prog = 0;
+    E.times.forEach(t => { if (h >= t && h < t + E.dur) { const f = (h - t) / E.dur; ev += f < .7 ? 95 : 45; prog = f; } });
+    const open = piece([[0, 0], [6.5, 0], [7.5, 1], [22.5, 1], [23, 0], [24, 0]], h);
+    const peaks = piece([[0, 0], [8, 0], [9, 4], [10, 0], [13, 0], [14, 4], [15, 0], [18, 0], [19, 4], [20, 0], [24, 0]], h);
+    const coffee = 2.5 + open * 6.5 + peaks * open + (st.season === 'winter' ? 6 : 0);
+    return { pv: pvOut(60, 'canopy', h, st), load: ev + coffee, ev, coffee, prog, open };
+  },
+  controls: `<div class="range small"><label>Зарядок в день (летом)</label><input type="range" data-ctl="sessions" min="2" max="24" step="1" value="8"><output data-ref="sessout">8</output></div>`,
+  onCtl(ctx, st, k, v) { if (k === 'sessions') ctx.r.sessout.textContent = v; },
+  svg: k => baseSky(k) + `
+    <path data-ref="hill" d="M0 330 Q150 260 300 300 T600 285 T1000 300 V420 H0Z"/><g data-ref="pines"></g>
+    <rect data-ref="ground" x="0" y="415" width="1000" height="145"/>
+    <rect x="0" y="458" width="1000" height="98" fill="#2a2f3a"/><rect x="0" y="457" width="1000" height="3" fill="#cfd5df" opacity=".7"/><rect x="0" y="551" width="1000" height="3" fill="#cfd5df" opacity=".7"/>
+    <g data-ref="lane"></g><g data-info="road"><g data-ref="far"></g><g data-ref="near"></g></g>
+    <g data-info="sign"><rect x="469" y="384" width="5" height="56" fill="#8a96ad"/><rect x="422" y="340" width="98" height="46" rx="4" fill="#1d5fbf" stroke="#fff" stroke-width="1.5"/>
+      <text x="471" y="356" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" class="mono">Р-297 «АМУР»</text><text x="471" y="369" text-anchor="middle" font-size="8.5" fill="#fff" class="mono">← Чита 380</text><text x="471" y="380" text-anchor="middle" font-size="8.5" fill="#fff" class="mono">Владивосток 2545 →</text></g>
+    ${F('ev', 'M786 428 H772 V450 H123 V440 M293 450 V440', 'var(--ev)')}${F('coffee', 'M786 402 H736', 'var(--load)')}${F('grid', 'M965 320 V425 H910', 'var(--grid)')}
+    <g data-info="pv"><rect x="60" y="330" width="380" height="10" rx="3" fill="#cfd8ea"/><text x="250" y="338.5" text-anchor="middle" class="mono" font-weight="800" font-size="8" fill="#0e6b78" letter-spacing="2">ЭЛЕКТРОЗАРЯДКА · 120 кВт</text>
+      <path d="${panelPath(66, 434, 330, 20, 18)}" fill="url(#cells)" stroke="#9bb7e6" stroke-width="1.2"/><path data-ref="shine" d="${panelPath(66, 434, 330, 20, 18)}" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/>
+      <path class="pvsnow" d="M74 327 L90 313 H200 L186 327Z M270 327 L286 313 H390 L376 327Z" fill="#eef4ff" opacity="0"/>
+      <rect x="66" y="340" width="6" height="100" fill="#aab6cf"/><rect x="247" y="340" width="6" height="100" fill="#aab6cf"/><rect x="428" y="340" width="6" height="100" fill="#aab6cf"/></g>
+    <g data-ref="evcars"></g>
+    <g data-info="charger" data-ref="posts"></g>
+    <g data-info="coffee"><rect x="536" y="352" width="200" height="88" fill="#5a3d2b"/><path d="M524 356 L636 318 L748 356Z" fill="#3a2a20"/>
+      <rect data-ref="cw1" x="552" y="366" width="66" height="40" rx="3" fill="#2a1a10"/><rect data-ref="cw2" x="656" y="366" width="64" height="40" rx="3" fill="#2a1a10"/><rect x="622" y="394" width="28" height="46" fill="#2b1d14"/>
+      <rect data-ref="csign" x="574" y="330" width="124" height="22" rx="6" fill="#140d08" stroke="#ffb35c" stroke-width="1.5"/><text data-ref="csigntxt" x="636" y="346" text-anchor="middle" class="mono" font-weight="800" font-size="12" fill="#ffc98a" letter-spacing="2">☕ КОФЕЙНЯ</text>
+      <g data-ref="steam"></g><g fill="#7a5233"><rect x="542" y="428" width="22" height="3"/><rect x="551" y="431" width="3" height="9"/><rect x="708" y="428" width="22" height="3"/><rect x="717" y="431" width="3" height="9"/></g></g>
+    <g data-info="bat"><rect x="786" y="382" width="124" height="58" rx="4" fill="#d9dee8"/><path d="M798 384V438M810 384V438M822 384V438M834 384V438M846 384V438M858 384V438M870 384V438M882 384V438M894 384V438" stroke="#b5bdcc" stroke-width="2"/>
+      <rect x="794" y="388" width="24" height="46" rx="3" fill="#0e1628" stroke="#3ddc97" stroke-width="1.5"/><rect x="797" y="391" width="18" height="40" fill="#0b1f19"/><rect data-ref="batlvl" x="797" y="431" width="18" height="0" fill="url(#batfill)" filter="url(#glow)"/>
+      <rect x="834" y="392" width="56" height="30" rx="4" fill="#0e1628" stroke="#ffc23d" stroke-width="1.5"/><text data-ref="batpct" x="862" y="412" text-anchor="middle" font-size="11" font-weight="800" fill="#3ddc97" class="mono">0%</text>
+      <text x="848" y="453" text-anchor="middle" class="lbl" style="font-size:11px">накопитель 200 кВт·ч</text></g>
+    <g data-info="grid"><rect x="962" y="300" width="6" height="140" fill="#5b6b8c"/><rect x="944" y="306" width="42" height="5" fill="#5b6b8c"/><text x="954" y="294" text-anchor="end" class="lbl" style="font-size:10.5px">сеть 50 кВт</text></g>
+    ${F('sun', 'M300 312 H848 V382', 'var(--sun)')}
+    ${L('sun', 'var(--sun)', 600, 302)}${L('ev', 'var(--ev)', 250, 362)}${L('coffee', '#fff', 760, 394)}${L('grid', 'var(--grid)', 950, 316, 'end')}${L('bat', 'var(--bat)', 848, 374)}
+    <g data-ref="snow"></g>`,
+  init(ctx) {
+    makePines(ctx.r.pines, 22, 330, 390);
+    for (let i = 0; i < 20; i++) el('rect', { x: i * 52, y: 503, width: 26, height: 3, fill: '#e6e9ef', opacity: .8 }, ctx.r.lane);
+    const cols = ['#e04f5f', '#e9eef8', '#3a7bd5', '#f2b33d', '#6b7280', '#2b2f3a'];
+    [['far', -1, 492, ['car', 'car', 'car']], ['near', 1, 540, ['truck', 'car', 'truck']]].forEach(([lane, dir, base, kinds]) => {
+      kinds.forEach((kind, i) => {
+        const g = el('g', {}, ctx.r[lane]); g._d = dir; g._y = base; g._x = i * 420 + Math.random() * 120; g._v = kind === 'truck' ? 75 : 105 + Math.random() * 30;
+        const inner = el('g', { transform: dir < 0 ? 'scale(-1 1)' : '' }, g);
+        const len = kind === 'truck' ? 168 : 100;
+        (kind === 'truck' ? drawTruck : drawCar)(inner, cols[(i * 2 + (lane === 'far' ? 1 : 0)) % 6], { transform: `translate(${-len / 2} 0)` });
+        g._light = el('circle', { cx: len / 2 - 2, cy: kind === 'truck' ? -20 : -18, r: 4, fill: '#fff6c0', opacity: 0, filter: 'url(#glow)' }, inner);
+      });
+    });
+    [112, 282].forEach((x, i) => {
+      const p = ctx.r.posts; el('rect', { x, y: 388, width: 22, height: 52, rx: 4, fill: '#16233d', stroke: '#3df2ff', 'stroke-width': 1.5 }, p);
+      const s = el('rect', { x: x + 4, y: 393, width: 14, height: 16, rx: 2, fill: '#0b1220' }, p); s.classList.add('scr');
+      el('text', { x: x + 11, y: 405, 'text-anchor': 'middle', 'font-size': 8, 'font-weight': 800, fill: '#3df2ff', class: 'mono' }, p).textContent = '⚡';
+      el('text', { x: x + 11, y: 382, 'text-anchor': 'middle', class: 'lbl', style: 'font-size:10.5px' }, p).textContent = 'пост ' + (i + 1);
+      const g = el('g', { class: 'evcar', opacity: 0 }, ctx.r.evcars);
+      drawCar(g, i ? '#3a7bd5' : '#e9eef8', { transform: `translate(${x + 30} 431.5)` });
+      el('path', { d: `M${x + 20} 404 Q${x + 30} 428 ${x + 36} 418`, stroke: '#1b1b1b', 'stroke-width': 3.5, fill: 'none' }, g);
+      el('rect', { x: x + 58, y: 370, width: 44, height: 16, rx: 5, fill: '#0b1220', stroke: '#3df2ff' }, g); g._bar = el('rect', { x: x + 60, y: 372, width: 0, height: 12, rx: 3, fill: '#3df2ff', opacity: .7 }, g);
+      g._pct = el('text', { x: x + 80, y: 382, 'text-anchor': 'middle', 'font-size': 9.5, 'font-weight': 800, fill: '#fff', class: 'mono' }, g);
+    });
+    for (let i = 0; i < 5; i++) { const c = el('circle', { fill: '#e8e0d6' }, ctx.r.steam); c._k = i; }
+  },
+  render(ctx, m, st, sky, h, dt) {
+    const tt = now();
+    ctx.r.shine.setAttribute('opacity', m.pv / 60 * .55);
+    const lvl = 40 * m.soc / 100; ctx.r.batlvl.setAttribute('y', 431 - lvl); ctx.r.batlvl.setAttribute('height', lvl); ctx.r.batlvl.setAttribute('fill', m.soc < 25 ? '#ff6a3d' : 'url(#batfill)'); ctx.r.batpct.textContent = fmt(m.soc) + '%';
+    const open = m.open > .2; const wc = open ? (sky.dark ? '#ffcf6b' : '#8a6a4a') : '#2a1a10';
+    [ctx.r.cw1, ctx.r.cw2].forEach(w => { w.setAttribute('fill', wc); w.setAttribute('filter', open && sky.dark ? 'url(#glow)' : ''); });
+    ctx.r.csign.setAttribute('filter', open && sky.dark ? 'url(#glow)' : ''); ctx.r.csigntxt.setAttribute('filter', open && sky.dark ? 'url(#glow)' : ''); ctx.r.csigntxt.setAttribute('opacity', open ? 1 : .35);
+    for (const s of ctx.r.steam.children) { const t = (tt * .4 + s._k / 5) % 1; s.setAttribute('cx', 590 + Math.sin(t * 6 + s._k) * 4); s.setAttribute('cy', 328 - t * 40); s.setAttribute('r', 2 + t * 5); s.setAttribute('opacity', open ? (1 - t) * .55 : 0); }
+    const busy = Math.max(.3, sky.day);
+    for (const lane of [ctx.r.far, ctx.r.near]) for (const g of lane.children) { g._x += g._d * g._v * dt * busy; if (g._x > 1120) g._x = -120; if (g._x < -120) g._x = 1120; g.setAttribute('transform', `translate(${g._x} ${g._y})`); g._light.setAttribute('opacity', sky.dark ? 1 : 0); }
+    const E = this.evS(st); const cars = ctx.r.evcars.children, scr = ctx.r.posts.querySelectorAll('.scr');
+    for (let i = 0; i < 2; i++) { let on = false, f = 0; E.times.forEach((t, j) => { if (j % 2 === i && h >= t && h < t + E.dur) { on = true; f = (h - t) / E.dur; } }); cars[i].setAttribute('opacity', on ? 1 : 0); const pct = Math.round(15 + 65 * f); cars[i]._bar.setAttribute('width', 40 * pct / 100); cars[i]._pct.textContent = pct + '%'; scr[i].setAttribute('fill', on && Math.sin(tt * 4) > 0 ? '#0e3b44' : '#0b1220'); }
+    setFlow(ctx, 'sun', m.pv, 60, { label: m.pv > .05 ? '☀ ' + fmt(m.pv, 1) + ' кВт' : '' });
+    setFlow(ctx, 'ev', m.ev, 120, { label: '⚡ зарядка ' + fmt(m.ev) + ' кВт' }); setFlow(ctx, 'coffee', m.coffee, 20, { label: '☕ ' + fmt(m.coffee, 1) + ' кВт' });
+    if (m.exp > .05) setFlow(ctx, 'grid', m.exp, 50, { reverse: true, color: 'var(--export)', label: '→ ' + fmt(m.exp, 1) + ' кВт' }); else setFlow(ctx, 'grid', m.imp, 50, { color: 'var(--grid)', label: fmt(m.imp, 1) + ' кВт' });
+    ctx.r['l-bat'].textContent = Math.abs(m.bat) > .5 ? (m.bat > 0 ? '▲ заряд ' : '▼ отдаёт ') + fmt(Math.abs(m.bat)) + ' кВт' : '';
+  },
+  status(m) {
+    if (m.ev > 0 && m.bat < -1) return `⚡ Машина берёт ${fmt(m.ev)} кВт: сеть даёт только ${fmt(m.imp)} кВт, остальное — <b style="color:var(--bat)">накопитель</b>${m.pv > .5 ? ' и солнце' : ''}`;
+    if (m.ev > 0) return '⚡ Идёт зарядка — хватает солнца и сети';
+    if (m.bat > .5 && m.pv > .5) return '☀ Машин нет — солнце заряжает накопитель';
+    if (m.bat > .5) return '🔋 Накопитель подзаряжается из сети';
+    if (m.exp > .05) return '☀ Накопитель полный — излишки продаём в сеть';
+    return '☕ Кофейня работает, накопитель ждёт следующую машину';
+  },
+  kpis: [['Солнце', 'var(--sun)', m => [m.pv, 'кВт']], ['Зарядка', 'var(--ev)', m => [m.ev, 'кВт', 0]], ['Накопитель', 'var(--bat)', m => [m.soc, '%', 0], m => m.soc < 25], ['Из сети (лимит 50)', 'var(--grid)', m => [m.imp, 'кВт', 0], m => m.imp > 49]],
+  day(c, st, S) {
+    const n = S.evS(st).times.filter(t => t < c._h).length;
+    return [['Зарядили машин', n + ' · ' + fmt(c.ev) + ' кВт·ч'], ['Выручка зарядки', rub(c.ev * EVP)], ['Доп. выручка кофейни', rub(n * 400)], ['Солнце дало', fmt(c.pv) + ' кВт·ч'], ['Купили из сети', fmt(c.imp) + ' кВт·ч']];
+  },
+  big(c, st, S) { const n = S.evS(st).times.filter(t => t < c._h).length; return ['Заработано за сутки', c.ev * EVP * .89 - (c.imp * T - c.exp * BUY - c.coffee * T) + n * 240]; },
+  chart: d => [{ v: d.map(a => a.m.pv), color: '#ffc23d', area: true, w: 1.8 }, { v: d.map(a => a.m.ev), color: '#3df2ff', w: 1.4 }, { v: d.map(a => a.m.imp), color: '#4aa3ff', w: 1.2, dash: '3 2' }, { v: d.map(a => a.m.soc), color: '#3ddc97', w: 1.4, dash: '4 2', right: true }],
+  legend: [['солнце', '--sun'], ['зарядка', '--ev'], ['из сети', '--grid'], ['накопитель, %', '--bat']],
+  econ(A, st, S) {
+    const cap = 15e6, nYear = 182.5 * (S.evS(Object.assign({}, st, { season: 'summer' })).n + S.evS(Object.assign({}, st, { season: 'winter' })).n);
+    const rev = A.ev * EVP, elec = A.imp * T - A.exp * BUY - A.coffee * T, opex = cap * .015 + rev * .11, cafe = nYear * 240, profit = rev - elec - opex + cafe;
+    const pb = profit > 0 ? fmt(cap / profit, 1) + ' года' : 'не окупается';
+    return { rows: [['Зарядок в год', fmt(nYear)], ['Выручка зарядки (18 ₽/кВт·ч)', rub(rev)], ['Электричество для зарядки (за вычетом солнца)', '−' + rub(Math.max(elec, 0))], ['Обслуживание, налог, эквайринг', '−' + rub(opex)], ['Доп. прибыль кофейни (≈240 ₽ с водителя)', '+' + rub(cafe)],
+      ['total', 'Прибыль в год', rub(profit)], ['Вложения в энергетику', '≈15 млн ₽'], ['Окупаемость', pb], ['С субсидией Минпромторга (≈−2,8 млн)', profit > 0 ? fmt((cap - 2.8e6) / profit, 1) + ' года' : '—']],
+      hint: 'Сеть на трассе слабая — дают только 50 кВт. Без накопителя быструю зарядку тут не поставить. Двигайте «Зарядок в день»: окупаемость решает поток машин, а не солнце. Субсидия — только на российскую станцию от 149 кВт.' };
+  },
+  info: {
+    pv: m => ['60 кВт панелей над зарядкой', 'Навес защищает машины от снега и дождя. Днём солнце заряжает накопитель и питает кофейню. Сейчас: <b>' + fmt(m.pv, 1) + ' кВт</b>.'],
+    charger: () => ['Зарядная станция 120 кВт, 2 поста', 'Разъёмы CHAdeMO, GB/T, CCS2. Электромобиль заряжается с 15% до 80% за ≈30 минут — как раз на кофе. Цена 18 ₽ за кВт·ч, одна зарядка ≈720 ₽.'],
+    bat: m => ['Накопитель 200 кВт·ч', 'Главная деталь на трассе. Сеть даёт только 50 кВт, а машине нужно до 95 кВт — разницу отдаёт накопитель. Между машинами он подзаряжается от солнца и сети. Заряд: <b>' + fmt(m.soc) + '%</b>.'],
+    coffee: () => ['Кофейня', 'Пока машина заряжается 30 минут, водитель пьёт кофе и ест. Средний чек ≈400 ₽ — дополнительная выручка, которой без зарядки не было бы. Свет, кофемашины, печь и отопление тоже частично питаются от солнца.'],
+    grid: () => ['Слабая сеть — 50 кВт', 'На трассе подключить больше мощности дорого и долго. Поэтому станция берёт из сети не больше 50 кВт, а пики покрывает накопитель.'],
+    road: () => ['Федеральная трасса Р-297 «Амур»', 'Участок Чита — Хабаровск — Владивосток. Быстрых зарядок на забайкальском участке почти нет — первая станция займёт маршрут.'],
+    sign: () => ['Где это', 'Пример точки на «Амуре» в 380 км от Читы. Лучшие места — рядом с кафе, гостиницей или АЗС, где водители и так останавливаются.']
+  }
+});
+
+/* ---------- 5. PRIVATE HOUSE ---------- */
+SCENES.push({
+  key: 'home', tab: 'Частный дом', groundType: 'nature',
+  badge: () => 'Частный дом под Читой · 10 кВт панелей · батарея 15 кВт·ч',
+  state: { season: 'summer', cloudy: false, ev: false, outage: false, heat: 'coal' },
+  tariff: st => st.heat === 'coal' ? TH : 4.85,
+  sys: st => ({ bat: 15, batP: 8, grid: 15, exportOK: true, strategy: 'self', minSoc: st.outage ? .05 : .2 }),
+  profile(h, st) {
+    const v = piece([[0, .35], [6.3, .35], [7, 2], [8.5, 2], [9.5, .9], [17.5, .9], [18.5, 2.6], [22.5, 2.3], [23.5, .5], [24, .35]], h);
+    let house = v * (st.season === 'winter' ? 1.3 : 1) + (st.season === 'winter' ? .3 : 0);
+    if (st.outage) house = .35 + house * .25;
+    const ev = st.ev && h >= 11 && h < 13.5 ? 7 : 0;
+    const w = st.season === 'winter';
+    const heatTh = st.heat === 'coal' ? 0 : (w ? 130 : 25) / 24 * piece([[0, 1.15], [6, 1.2], [9, 1], [12, .8], [16, .85], [19, 1.05], [24, 1.15]], h);
+    const heat = st.outage ? 0 : st.heat === 'boiler' ? heatTh : st.heat === 'hp' ? heatTh / (w ? 2.2 : 3.5) : 0;
+    return { pv: pvOut(10, 'roof', h, st), load: house + ev + heat, house, ev, heat, heatTh: st.outage ? 0 : heatTh };
+  },
+  controls: `<div class="seg" data-ctl="heat"><button data-v="coal" class="on">Котёл на угле</button><button data-v="boiler">Электрокотёл</button><button data-v="hp">Тепловой насос</button></div>
+    <div class="seg" data-ctl="ev"><button data-v="0" class="on">Без электромобиля</button><button data-v="1">+ Электромобиль</button></div>
+    <div class="seg warn" data-ctl="outage"><button data-v="0" class="on">Сеть есть</button><button data-v="1">⚠ Отключили свет</button></div>`,
+  onCtl(ctx, st, k, v) { if (k === 'ev') st.ev = v === '1'; if (k === 'outage') st.outage = v === '1'; if (k === 'heat') { st.heat = v; ctx.r.hpunit.style.display = v === 'hp' ? '' : 'none'; ctx.r.eboiler.style.display = v === 'boiler' ? '' : 'none'; } },
+  svg: k => baseSky(k) + `
+    <path data-ref="hill" d="M0 340 Q200 280 420 320 T1000 310 V430 H0Z"/><g data-ref="pines"></g>
+    <rect data-ref="ground" x="0" y="430" width="1000" height="130"/>
+    <g data-ref="tree"><rect x="160" y="330" width="12" height="100" fill="#5a3b24"/><circle data-ref="crown" cx="166" cy="312" r="50" fill="#2f6b3a"/><circle data-ref="crown2" cx="140" cy="335" r="32" fill="#2f6b3a"/><circle data-ref="crown3" cx="192" cy="332" r="34" fill="#2f6b3a"/></g>
+    <g fill="#8a6a4a"><rect x="240" y="410" width="110" height="5"/><rect x="240" y="424" width="110" height="5"/><rect x="820" y="410" width="160" height="5"/><rect x="820" y="424" width="160" height="5"/></g>
+    <g data-info="grid"><rect x="40" y="250" width="6" height="185" fill="#5b6b8c"/><rect x="22" y="258" width="42" height="5" fill="#5b6b8c"/><path d="M58 258 Q240 300 370 320" stroke="#3f4f70" fill="none" data-ref="wire"/><g data-ref="cross" opacity="0"><path d="M26 236 L60 270 M60 236 L26 270" stroke="#ff4d4d" stroke-width="5" stroke-linecap="round"/></g></g>
+    ${F('grid', 'M43 300 V458 H689 V400', 'var(--grid)')}
+    <g data-info="house"><rect x="370" y="300" width="290" height="138" fill="#e7dccb"/><path d="M350 302 L420 226 H610 L680 302Z" fill="#6a3b2e"/>
+      <rect x="600" y="230" width="18" height="40" fill="#7a4a3a"/><g data-ref="hsmoke"></g>
+      <g data-ref="hwin"></g><rect x="500" y="378" width="34" height="60" fill="#6b4a33"/><circle cx="527" cy="410" r="2" fill="#d9c08a"/></g>
+    <g data-ref="hpunit" data-info="hp" style="display:none"><rect x="300" y="396" width="58" height="42" rx="4" fill="#e9edf3" stroke="#9aa6b8"/><circle cx="322" cy="417" r="15" fill="#c9d1dd" stroke="#8a96a8"/><g data-ref="fan"><path d="M322 417 l0 -12 a4 4 0 0 1 4 4z M322 417 l12 0 a4 4 0 0 1 -4 4z M322 417 l0 12 a4 4 0 0 1 -4 -4z M322 417 l-12 0 a4 4 0 0 1 4 -4z" fill="#6b778a"/></g><rect x="342" y="404" width="10" height="26" rx="2" fill="#d5dbe4"/><text x="329" y="456" text-anchor="middle" class="lbl" style="font-size:10.5px">тепловой насос</text></g>
+    <g data-ref="eboiler" data-info="boiler" style="display:none"><rect x="474" y="390" width="20" height="30" rx="3" fill="#f2f4f7" stroke="#ff8a4c" stroke-width="1.5"/><text x="484" y="410" text-anchor="middle" font-size="12" fill="#ff8a4c">♨</text></g>
+    <g data-info="pv"><path d="M436 296 L470 238 H596 L626 296Z" fill="url(#cells)" stroke="#9bb7e6" stroke-width="1.2"/><path data-ref="shine" d="M436 296 L470 238 H596 L626 296Z" fill="#ffd25a" opacity="0" style="mix-blend-mode:screen"/>
+      <path class="pvsnow" d="M446 290 L470 250 H530 L515 290Z" fill="#eef4ff" opacity="0"/></g>
+    <g data-info="garage"><rect x="660" y="340" width="150" height="98" fill="#d8ccba"/><path d="M652 342 L735 316 L818 342Z" fill="#6a3b2e"/><rect x="756" y="368" width="46" height="70" fill="#a89a86"/><path d="M756 380 H802 M756 392 H802 M756 404 H802 M756 416 H802 M756 428 H802" stroke="#8f826f"/></g>
+    <g data-info="inv"><rect x="672" y="356" width="34" height="44" rx="4" fill="#0e1628" stroke="#ffc23d" stroke-width="1.5"/><circle data-ref="invled" cx="682" cy="368" r="3.5" fill="#3ddc97" filter="url(#glow)"/><text data-ref="invtxt" x="689" y="390" text-anchor="middle" font-size="7" font-weight="800" fill="#ffc23d" class="mono">0 кВт</text></g>
+    <g data-info="bat"><rect x="712" y="352" width="34" height="76" rx="4" fill="#eef1f5" stroke="#b5bdcc"/><rect x="718" y="360" width="22" height="60" rx="3" fill="#0b1f19"/><rect data-ref="batlvl" x="718" y="420" width="22" height="0" fill="url(#batfill)" filter="url(#glow)"/></g>
+    <text data-ref="batpct" x="729" y="447" text-anchor="middle" class="lbl" style="font-size:11px">0%</text>
+    <g data-ref="evcar" opacity="0" data-info="ev"><path d="M806 400 Q822 424 838 416" stroke="#1b1b1b" stroke-width="3.5" fill="none"/></g>
+    ${F('sun', 'M610 252 H690 V356', 'var(--sun)')}${F('house', 'M672 384 H662', 'var(--load)')}${F('bat', 'M706 378 H712', 'var(--bat)')}${F('ev', 'M802 404 H812', 'var(--ev)')}
+    ${L('sun', 'var(--sun)', 740, 246)}${L('house', '#fff', 470, 474)}${L('grid', 'var(--grid)', 260, 476)}${L('bat', 'var(--bat)', 729, 340)}${L('ev', 'var(--ev)', 880, 380)}
+    <g data-ref="snow"></g>`,
+  init(ctx) {
+    makePines(ctx.r.pines, 18, 330, 380);
+    const w = ctx.r.hwin; [[390, 318], [450, 318], [560, 318], [618, 318], [390, 380], [450, 380], [560, 380], [612, 380]].forEach(([x, y]) => el('rect', { x, y, width: 30, height: 30, fill: '#2a3a52', stroke: '#fff', 'stroke-width': 2, class: 'hw' }, w));
+    for (let i = 0; i < 6; i++) { const c = el('circle', { fill: '#a9aeb8' }, ctx.r.hsmoke); c._k = i; }
+    drawCar(ctx.r.evcar, '#3ddc97', { transform: 'translate(832 429.5)' });
+  },
+  render(ctx, m, st, sky, h) {
+    const winter = st.season === 'winter', tt = now();
+    ctx.r.shine.setAttribute('opacity', m.pv / 10 * .55);
+    const crown = winter ? mix('#3a3f4a', '#c9d3e2', sky.day) : mix('#16301c', '#3f8a4a', sky.day); [ctx.r.crown, ctx.r.crown2, ctx.r.crown3].forEach(c => c.setAttribute('fill', crown));
+    const lvl = 60 * m.soc / 100; ctx.r.batlvl.setAttribute('y', 420 - lvl); ctx.r.batlvl.setAttribute('height', lvl); ctx.r.batlvl.setAttribute('fill', m.soc < 25 ? '#ff6a3d' : 'url(#batfill)'); ctx.r.batpct.textContent = fmt(m.soc) + '%';
+    const lit = sky.day < .3 && m.unmet < .05 && (h > 15 || h < .8 || (h > 6.3 && h < 9));
+    ctx.svg.querySelectorAll('.hw').forEach((w, i) => { const on = lit && (i % 3 !== 1 || h < 22.5); w.setAttribute('fill', on ? '#ffcf6b' : mix('#1a2638', '#6f8fb5', sky.day)); w.setAttribute('filter', on ? 'url(#glow)' : ''); });
+    for (const s of ctx.r.hsmoke.children) { const t = (tt * .35 + s._k / 6) % 1; s.setAttribute('cx', 609 + t * 20); s.setAttribute('cy', 226 - t * 50); s.setAttribute('r', 3 + t * 8); s.setAttribute('opacity', winter && st.heat === 'coal' ? (1 - t) * .5 : 0); }
+    if (st.heat === 'hp') ctx.r.fan.setAttribute('transform', `rotate(${(tt * (m.heat > .05 ? 400 : 0)) % 360} 322 417)`);
+    ctx.r.evcar.setAttribute('opacity', st.ev ? 1 : 0);
+    ctx.r.cross.setAttribute('opacity', st.outage ? 1 : 0); ctx.r.wire.setAttribute('stroke', st.outage ? '#5c2525' : '#3f4f70');
+    setFlow(ctx, 'sun', m.pv, 10, { label: m.pv > .05 ? '☀ ' + fmt(m.pv, 1) + ' кВт' : '' }); setFlow(ctx, 'house', m.house + m.heat, 8, { label: 'дом ' + fmt(m.house + m.heat, 1) + ' кВт' + (m.heat > .05 ? ' (отопление ' + fmt(m.heat, 1) + ')' : '') });
+    setFlow(ctx, 'bat', Math.abs(m.bat), 6, { reverse: m.bat < 0, label: (m.bat > 0 ? '▲ ' : '▼ ') + fmt(Math.abs(m.bat), 1) + ' кВт' }); setFlow(ctx, 'ev', m.ev, 7, { label: '⚡ ' + fmt(m.ev) + ' кВт' });
+    if (m.exp > .05) setFlow(ctx, 'grid', m.exp, 8, { reverse: true, color: 'var(--export)', label: '→ в сеть ' + fmt(m.exp, 1) + ' кВт' }); else setFlow(ctx, 'grid', m.imp, 8, { color: 'var(--grid)', label: 'из сети ' + fmt(m.imp, 1) + ' кВт' });
+    ctx.r.invtxt.textContent = fmt(m.load, 1) + ' кВт'; ctx.r.invled.setAttribute('fill', st.outage ? (Math.sin(tt * 5) > 0 ? '#ff6a3d' : '#3ddc97') : '#3ddc97');
+  },
+  status(m, st) {
+    if (st.outage && m.unmet > .05) return '⚠ Света нет, батарея села — дом обесточен до утра';
+    if (st.outage) return '⚠ В посёлке отключили свет — <b style="color:var(--bat)">дом работает от солнца и батареи</b> (свет, холодильник, насос, котёл)' + (st.heat !== 'coal' ? '. Электроотопление батарея не тянет — нужна печь или котёл в резерв' : ', соседи сидят без света');
+    if (m.heat > .05 && m.pv >= m.load) return `🔥 Отопление ${fmt(m.heat, 1)} кВт — сейчас солнце полностью покрывает дом`;
+    if (m.heat > .05 && m.pv > .05) return `🔥 Отопление ${fmt(m.heat, 1)} кВт: солнце покрывает <b style="color:var(--sun)">${fmt(m.pv / m.load * 100)}%</b> потребления, остальное — ${m.bat < -.05 ? 'батарея и сеть' : 'из сети'}`;
+    if (m.heat > .05) return `🔥 Отопление ${fmt(m.heat, 1)} кВт — солнца нет, греемся от сети`;
+    if (m.exp > .05) return '☀ Батарея полная — излишки продаём в сеть';
+    if (m.bat > .05) return '☀ Солнце питает дом и заряжает батарею';
+    if (m.bat < -.05) return '🔋 Вечер — дом работает от батареи, сеть не нужна';
+    if (m.imp > .05) return 'Батарея держит резерв на случай отключения — недостающее берём из сети';
+    return '☀ Дом питается от солнца';
+  },
+  kpis: [['Солнце', 'var(--sun)', m => [m.pv, 'кВт']], ['Дом потребляет', '#fff', m => [m.load, 'кВт']], ['Батарея', 'var(--bat)', m => [m.soc, '%', 0], m => m.soc < 25], ['Сеть', 'var(--grid)', (m, st) => st.outage ? ['нет', 'света'] : m.exp > .05 ? ['→' + fmt(m.exp, 1), 'кВт в сеть'] : [m.imp, 'кВт из сети'], (m, st) => st.outage]],
+  day: (c, st) => (st.heat !== 'coal' ? [['На отопление', fmt(c.heat, 1) + ' кВт·ч']] : []).concat([['Солнце выработало', fmt(c.pv, 1) + ' кВт·ч'], ['Потратили сами', fmt(c.pvUsed, 1) + ' кВт·ч'], ['Продали в сеть', fmt(c.exp, 1) + ' кВт·ч'], ['Купили из сети', fmt(c.imp, 1) + ' кВт·ч']].concat(st.outage ? [['Не хватило при отключении', fmt(c.unmet, 1) + ' кВт·ч']] : [])),
+  big(c, st) { return ['Солнце сэкономило', c.pvUsed * this.tariff(st) + c.exp * BUY]; },
+  chart: d => [{ v: d.map(a => a.m.pv), color: '#ffc23d', area: true, w: 1.8 }, { v: d.map(a => a.m.load), color: '#e9eef8' }, { v: d.map(a => a.m.imp), color: '#4aa3ff', w: 1.2, dash: '3 2' }, { v: d.map(a => a.m.soc), color: '#3ddc97', w: 1.4, dash: '4 2', right: true }],
+  legend: [['солнце', '--sun'], ['потребление', '--load'], ['из сети', '--grid'], ['батарея, %', '--bat']],
+  econ(A, st) {
+    const tar = this.tariff(st), cap = 1.25e6 + (st.ev ? 7e4 : 0), s = A.pvUsed * tar + A.exp * BUY;
+    const rows = [['Система', '10 кВт панелей · батарея 15 кВт·ч · гибридный инвертор'], ['Цена солнечной системы', rub(cap) + (st.ev ? ' (с домашней зарядкой)' : '')], ['Выработка в год', fmt(A.pv) + ' кВт·ч'], ['Потребление дома закрыто солнцем', fmt(A.pvUsed / A.load * 100) + '%'], ['Продано в сеть за год', fmt(A.exp) + ' кВт·ч']];
+    if (st.heat !== 'coal') {
+      const winterShare = 'зимой солнце закрывает лишь ≈10–20% отопления';
+      rows.unshift(['<div class="sec">Отопление</div>']);
+      rows.splice(1, 0, ['Электричество на отопление в год', fmt(A.heat / 1000, 1) + ' тыс. кВт·ч'], ['Счёт за отопление (тариф с электрокотлом 4,85 ₽)', '≈' + rub(A.heat * 4.85)]);
+      if (st.heat === 'hp') rows.splice(3, 0, ['Тепловой насос (≈0,75 млн ₽) экономит по сравнению с электрокотлом', rub((A.heatTh - A.heat) * 4.85) + ' в год'], ['Окупаемость насоса', fmt(7.5e5 / ((A.heatTh - A.heat) * 4.85), 1) + ' года']);
+      rows.splice(st.heat === 'hp' ? 5 : 3, 0, ['<div class="sec">Солнечная система</div>']);
+      rows.push(['Важно', winterShare]);
+    }
+    rows.push(['total', 'Солнце экономит в год', rub(s)], ['Окупаемость панелей', fmt(cap / s, 1) + ' года'], ['Свет при отключениях', 'есть — 10–20 часов от батареи']);
+    return { rows, hint: st.heat === 'coal'
+      ? 'Свет для населения в Чите дешёвый (≈6,5 ₽), поэтому окупаемость у дома долгая. Главное, что покупает клиент, — свет, насос и котёл при отключениях. Попробуйте «Электрокотёл» и «Тепловой насос».'
+      : 'Отопление от солнца — только частично: панели дают много летом, когда тепло не нужно, а в декабре–январе — в 4–6 раз меньше. Зато с электроотоплением большая часть выработки тратится дома, а не продаётся по 2 ₽. Лучшая связка — тепловой насос + панели: насос делает из 1 кВт·ч электричества 2–3,5 кВт·ч тепла. Печь или котёл на дровах оставьте резервом на отключения.' };
+  },
+  info: {
+    pv: m => ['10 кВт на крыше', 'Около 25 панелей по 400 Вт на южном скате. Сейчас: <b>' + fmt(m.pv, 1) + ' кВт</b>.'],
+    inv: () => ['Гибридный инвертор', 'Солнце — в дом, излишки — в батарею, потом в сеть. При отключении света за доли секунды переводит дом на батарею.'],
+    bat: m => ['Батарея 15 кВт·ч', 'Хватает на вечер и ночь: свет, холодильник, насос скважины, насос котла. Заряд: <b>' + fmt(m.soc) + '%</b>.'],
+    house: m => ['Дом 150 м²', 'Свет, кухня, бойлер, насос, стиральная машина. Сейчас дом берёт <b>' + fmt(m.house, 1) + ' кВт</b>. Отопление — котёл на угле или дровах, его насос тоже на солнце.'],
+    hp: () => ['Тепловой насос воздух-вода', 'Забирает тепло с улицы даже в мороз и делает из 1 кВт·ч электричества 2,2 кВт·ч тепла зимой и ≈3,5 весной и осенью. Модели EVI работают до −30 °C; в сильные морозы помогает встроенный электронагреватель. Цена с монтажом ≈0,6–0,9 млн ₽.'],
+    boiler: () => ['Электрокотёл', 'Простой и дешёвый (≈100 тыс. ₽ с монтажом), но 1 кВт·ч электричества = 1 кВт·ч тепла. Дом 150 м² тратит ≈28 тыс. кВт·ч за сезон. Для домов с электрокотлом в Чите действует скидка 30% — 3,67/4,85 ₽.'],
+    garage: () => ['Гараж', 'Здесь стоят инвертор и батарея — в тепле, им не страшен мороз.'],
+    grid: () => ['Сеть посёлка', 'Двунаправленный счётчик. Излишки покупают по ≈2 ₽, а свет для дома стоит ≈6,5 ₽ — выгоднее тратить солнце самим. Частный дом может отдавать в сеть до 50 кВт.'],
+    ev: () => ['Электромобиль', 'Заряжается днём, пока светит солнце: 7 кВт с 11:00 до 13:30. Это ≈17 кВт·ч — около 100 км пробега почти бесплатно.']
+  }
+});
+
+/* =================================================================== */
+/* ENGINE                                                              */
+/* =================================================================== */
+const tabs = document.getElementById('tabs'), views = document.getElementById('views');
+const segHTML = (k, opts) => `<div class="seg" data-ctl="${k}">${opts.map(([v, t], i) => `<button data-v="${v}"${i ? '' : ' class="on"'}>${t}</button>`).join('')}</div>`;
+let active = SCENES[0];
+function recompute(S, withAnnual) {
+  const st = S.st, ctx = S.ctx;
+  S.data = simulate(S, st);
+  drawChart(ctx.ui.chart, S.data.map(a => a.h), S.chart(S.data), st.h);
+  if (withAnnual || !S.A) {
+    S.A = annual(S, st); const e = S.econ(S.A, st, S);
+    ctx.ui.econ.innerHTML = e.rows.map(r => r.length === 1 ? r[0] : r[0] === 'total' ? `<div class="row total"><span>${r[1]}</span><b>${r[2]}</b></div>` : `<div class="row"><span>${r[0]}</span><b${r[2] === 'g' ? ' style="color:var(--bat)"' : ''}>${r[1]}</b></div>`).join('') + (e.hint ? `<div class="hint">${e.hint}</div>` : '');
+  }
+  ctx.ui.badge.textContent = S.badge(st);
+}
+SCENES.forEach((S, idx) => {
+  const b = document.createElement('button'); b.className = 'tab' + (idx ? '' : ' active'); b.innerHTML = `<b>${idx + 1}</b>${S.tab}`; b.dataset.k = S.key; tabs.appendChild(b);
+  const v = document.createElement('section'); v.className = 'view' + (idx ? '' : ' active'); v.id = 'view-' + S.key;
+  v.innerHTML = `<div class="stage"><div class="badge"><span class="dot" style="color:var(--sun);background:var(--sun)"></span><span data-ui="badge"></span></div><div class="status" data-ui="status"></div>
+    <svg class="scene" viewBox="0 0 1000 560">${S.svg(S.key)}</svg>
+    <div class="controls"><div class="clock" data-ui="clock">12:00</div><button class="btn" data-ui="play" title="Пуск / пауза">❚❚</button>
+      ${segHTML('speed', [['1', '×4'], ['.25', '×1'], ['3', '×12']])}<div class="range"><input type="range" data-ui="time" min="0" max="23.99" step="0.01" value="12" aria-label="Время суток"></div>
+      ${S.controls || ''}${segHTML('season', [['summer', '☀ Лето'], ['winter', '❄ Зима']])}${segHTML('weather', [['clear', 'Ясно'], ['cloudy', 'Облачно']])}</div></div>
+    <aside><div class="card"><h3>Прямо сейчас</h3><div class="kpis">${S.kpis.map((k, i) => `<div class="kpi" data-kpi="${i}"><div class="l"><span class="dot" style="color:${k[1]};background:${k[1]}"></span>${k[0]}</div><div class="v">0</div></div>`).join('')}</div></div>
+      <div class="card"><h3>С начала суток</h3><div data-ui="day"></div><div class="row" style="align-items:center"><span data-ui="bigl"></span><span class="big" data-ui="big">0 ₽</span></div></div>
+      <div class="card chart"><h3>Сутки целиком</h3><svg data-ui="chart" viewBox="0 0 320 130"></svg><div class="legend">${S.legend.map(([t, c]) => `<span><i class="dot" style="color:var(${c});background:var(${c})"></i>${t}</span>`).join('')}</div></div>
+      <div class="card"><h3>Экономика за год</h3><div data-ui="econ"></div></div>
+      <div class="card info" data-ui="info"><div class="t">Нажмите на любой элемент схемы</div><div class="d">Покажу, что это за оборудование и зачем оно нужно.</div></div></aside>`;
+  views.appendChild(v);
+  const svg = v.querySelector('svg.scene'), r = {}; v.querySelectorAll('[data-ref]').forEach(e => r[e.dataset.ref] = e);
+  const ui = {}; v.querySelectorAll('[data-ui]').forEach(e => ui[e.dataset.ui] = e);
+  const ctx = { svg, r, ui, view: v, groundType: S.groundType };
+  const st = Object.assign({ h: 12, playing: true, speed: 1 }, S.state);
+  S.ctx = ctx; S.st = st;
+  makeStars(r.stars); makeClouds(r.clouds); makeSnow(r.snow); S.init && S.init(ctx);
+  v.querySelectorAll('.controls [data-ctl]').forEach(c => {
+    const k = c.dataset.ctl;
+    const apply = val => {
+      if (k === 'speed') st.speed = +val;
+      else if (k === 'season') st.season = val; else if (k === 'weather') st.cloudy = val === 'cloudy';
+      else if (k === 'sessions') st.sessions = +val; else if (k === 'mode') st.mode = val;
+      S.onCtl && S.onCtl(ctx, st, k, val);
+      if (k !== 'speed') recompute(S, k !== 'outage' && k !== 'season' && k !== 'weather');
+    };
+    if (c.tagName === 'INPUT') c.addEventListener('input', e => apply(e.target.value));
+    else c.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; [...c.children].forEach(x => x.classList.toggle('on', x === b)); apply(b.dataset.v); });
+  });
+  ui.play.onclick = () => { st.playing = !st.playing; ui.play.textContent = st.playing ? '❚❚' : '▶'; };
+  ui.time.addEventListener('input', e => { st.h = +e.target.value; });
+  svg.addEventListener('click', e => {
+    const g = e.target.closest('[data-info]'); if (!g || !S.info[g.dataset.info]) return;
+    svg.querySelectorAll('.sel').forEach(x => x.classList.remove('sel')); g.classList.add('sel');
+    const t = S.info[g.dataset.info](S.cur || {}, st); ui.info.innerHTML = `<div class="t">${t[0]}</div><div class="d">${t[1]}</div>`;
+  });
+  recompute(S, true);
+});
+tabs.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  tabs.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + t.dataset.k));
+  active = SCENES.find(s => s.key === t.dataset.k);
+});
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min((t - last) / 1000, .1); last = t;
+  const S = active, st = S.st, ctx = S.ctx;
+  if (st.playing) st.h = (st.h + dt * st.speed) % 24;
+  const d = S.data, idx = clamp(Math.round(st.h / 24 * (d.length - 1)), 0, d.length - 1), m = d[idx].m, c = Object.assign({ _h: st.h }, d[idx].c);
+  S.cur = m;
+  const sky = paintSky(ctx, st.h, st);
+  ctx.ui.clock.textContent = hhmm(st.h); ctx.ui.time.value = st.h;
+  S.render(ctx, m, st, sky, st.h, dt);
+  ctx.ui.status.innerHTML = S.status(m, st);
+  ctx.view.querySelectorAll('[data-kpi]').forEach(k => {
+    const def = S.kpis[+k.dataset.kpi], [val, unit, dec] = def[2](m, st);
+    k.querySelector('.v').innerHTML = (typeof val === 'number' ? fmt(val, dec ?? 1) : val) + (unit ? `<small>${unit}</small>` : '');
+    k.style.borderColor = def[3] && def[3](m, st) ? 'var(--gen)' : 'transparent';
+  });
+  ctx.ui.day.innerHTML = S.day(c, st, S).map(r => `<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  const [bl, bv] = S.big(c, st, S); ctx.ui.bigl.textContent = bl; ctx.ui.big.textContent = rub(bv);
+  moveMarker(ctx.ui.chart, st.h);
+  ambient(ctx, st, dt); tickFlows(ctx, dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__SCENES = SCENES;
+})();
+</script>
+</body>
+</html>
